@@ -602,7 +602,7 @@ List PATTStepTwo(clusterInv, phoneticInv, csv) {
     /* If there aren't any clusters in the inventory, set sonority distance to
     a number beyond the max. This is a hack that needs to be fixed */
     println "Attempting function getMinSonorityDistance"
-    msd = sae.getMinSonorityDistance(clusters, getBinding().out)
+    msd = sae.getMinSonorityDistance(clusters)
     if (msd == null) msd = 10
     println "PATTStepTwo: msd: $msd"
     removables = targetPool.findAll{ sae.getSonorityDistance(it) >= msd }
@@ -655,7 +655,7 @@ as "here are your potential 2-element 's' clusters */
     /* Find smallest sonority distance in targetPool. If there is more
 than one, find those with an OUT phone and return them as a treatment
 target list. */
-    msd = sae.getMinSonorityDistance(targetPool, getBinding().out)
+    msd = sae.getMinSonorityDistance(targetPool)
     removables = targetPool.findAll{ sae.getSonorityDistance(it) > msd }
     targetPool = targetPool - targetPool.intersect( removables )
     println "PATTStepTwo: Removed all from target pool >= $msd"
