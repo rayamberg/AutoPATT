@@ -56,6 +56,7 @@ class SAEInventory {
   		return SAE_CLUSTERS
   	}
   	
+  	/* Takes a 2-char cluster and determines sonority distance */
   	public Integer getSonorityDistance(String s) {
   		//out.println "Inside getSonorityDistance"
   		if (SAE_PHONES.containsKey(s[0]) && SAE_PHONES.containsKey(s[1])) {
@@ -63,15 +64,16 @@ class SAEInventory {
   		  return SAE_PHONES[s[1]] - SAE_PHONES[s[0]]
   		}
   	}
-  
-  	public Integer getMinSonorityDistance(List clusters, out) {
+    
+  	/* Takes a list of 2-char clusters and returns smallest sonority distance */
+  	public Integer getMinSonorityDistance(List clusters) {
   		//out.println "Inside getMinSonorityDistance"
   		def msd = null
 		for (cluster in clusters) {
-			def i = getSonorityDistance(cluster)
-			if (i == null) continue
-			if ( msd == null || i < msd )
-				msd = i
+			def distance = getSonorityDistance(cluster)
+			if (distance == null) continue
+			if ( msd == null || distance < msd )
+				msd = distance
 		}
 		//out.println "msd is $msd"
 		return msd
@@ -778,6 +780,9 @@ return
 
 
 /*  
+   TODO: Find out if possible to split into multiple files. Greg or Yvan may
+   know how to do this within PhonShell.
+
    TODO: Sort phonetic inventory by place and manner
    3/24/16 - Got something basic and ugly working but it should not need to be coded more than once!!
    8/11/16 - sorting by sonority distance in cluster inventory now. In the CSV printout, might
