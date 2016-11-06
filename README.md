@@ -1,2 +1,2 @@
 # AutoPATT
-Script to automate the Phonological Assessment and Treatment Target (PATT) selection process.
+Phon script to automate the Phonological Assessment and Treatment Target (PATT) selection process.
