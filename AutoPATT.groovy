@@ -56,6 +56,7 @@ class SAEInventory {
   		return SAE_CLUSTERS
   	}
   	
+  	/* Takes a 2-char cluster and determines sonority distance */
   	public Integer getSonorityDistance(String s) {
   		//out.println "Inside getSonorityDistance"
   		if (SAE_PHONES.containsKey(s[0]) && SAE_PHONES.containsKey(s[1])) {
@@ -63,15 +64,16 @@ class SAEInventory {
   		  return SAE_PHONES[s[1]] - SAE_PHONES[s[0]]
   		}
   	}
-  
-  	public Integer getMinSonorityDistance(List clusters, out) {
+    
+  	/* Takes a list of 2-char clusters and returns smallest sonority distance */
+  	public Integer getMinSonorityDistance(List clusters) {
   		//out.println "Inside getMinSonorityDistance"
   		def msd = null
 		for (cluster in clusters) {
-			def i = getSonorityDistance(cluster)
-			if (i == null) continue
-			if ( msd == null || i < msd )
-				msd = i
+			def distance = getSonorityDistance(cluster)
+			if (distance == null) continue
+			if ( msd == null || distance < msd )
+				msd = distance
 		}
 		//out.println "msd is $msd"
 		return msd
@@ -600,7 +602,7 @@ List PATTStepTwo(clusterInv, phoneticInv, csv) {
     /* If there aren't any clusters in the inventory, set sonority distance to
     a number beyond the max. This is a hack that needs to be fixed */
     println "Attempting function getMinSonorityDistance"
-    msd = sae.getMinSonorityDistance(clusters, getBinding().out)
+    msd = sae.getMinSonorityDistance(clusters)
     if (msd == null) msd = 10
     println "PATTStepTwo: msd: $msd"
     removables = targetPool.findAll{ sae.getSonorityDistance(it) >= msd }
@@ -653,7 +655,7 @@ as "here are your potential 2-element 's' clusters */
     /* Find smallest sonority distance in targetPool. If there is more
 than one, find those with an OUT phone and return them as a treatment
 target list. */
-    msd = sae.getMinSonorityDistance(targetPool, getBinding().out)
+    msd = sae.getMinSonorityDistance(targetPool)
     removables = targetPool.findAll{ sae.getSonorityDistance(it) > msd }
     targetPool = targetPool - targetPool.intersect( removables )
     println "PATTStepTwo: Removed all from target pool >= $msd"
@@ -775,71 +777,3 @@ csv.writeNext(clusterInv.outClusters as String[])
 println "Please see output in " + fileChooser.getSelectedFile().getAbsolutePath()
 csv.close()
 return
-
-
-/*  
-   TODO: Sort phonetic inventory by place and manner
-   3/24/16 - Got something basic and ugly working but it should not need to be coded more than once!!
-   8/11/16 - sorting by sonority distance in cluster inventory now. In the CSV printout, might
-   be good to loop through all sonority values and group together all clusters with those vals
-   in a single cell.
-  
-   For mismatches, the user can be given a menu to stop the 
-   query, include the record, exclude, etc. (P3)
-   8/7/16 - Looks like we need to split on whitespace to map utterances to orthography.
-   Phil will write to Phon folks, and I found OrthoWordExtractor, which actually didn't
-   help. I may code a regex later to fix this, but right now I want to wait for the Phon
-   people to let us know if there is a more elegant solution.
-   
-   TODO: resolve Step 2, Part D so that clusters are handled appropriately.
-   Dr Barlow's recommendation: It can spit out two lists, one of 2-element 
-   non-s clusters and another with 2-element s-clusters. The s-cluster list can 
-   come with a caveat, e.g. These may be appropriate targets if they are NOT 
-   error-patterning like  /st-/, /sp-/, /sk-/ (violate SSP, are adjunct clusters).
-   Also, this may be difficult, but if it could spit out a summary table of 
-   errors for the s/STOP/ clusters and the other s-clusters in questions.  
-   If they show the same reduction pattern, then do it. If one reduces to C1 
-   and the other doesn't then they aren't patterning the same. (P1/P2)
-   
-   TODO: Ensure affricates are not being considered in the sonority distance
-   calculations.
-   
-   TODO: allow for menu of functions, so that user doesn't just have
-   to do PATT, but could just get a minimal pair count, for example. (P4)
-   
-   TODO: output results into a CSV file. Include PATT references if you do. (P1/P2)
-   8/11/16 - got something cool working without Phon library. If you have a groovy
-   List, say row1 = ["cell1", "cell2", "cell3,with,commas"] then you can write a CSV
-   kind of like this:
-   import au.com.bytecode.opencsv.CSVWriter
-   w = new CSVWriter(new FileWriter("raystest.csv"))
-   w.writeNext(row1 as String[])
-   w.close()
-   
-   That's it. You can probably incorporate a file menu of some sort.
-
-   8/29/16 - got phonetic inventory printing into CSV as a kind of test around
-   line 147. This is similar to how it should output when finished, by place and
-   manner, etc., but it needs to be coded properly within the whole system. It will
-   be nice to see if there is a standard "Save As" menu within java swing package or
-   something that connects to mac interface. Try java.awt since that may work better
-   for OSX.
-
-   
-   TODO: Allow for this to work in other languages besides English. For example,
-   in Spanish, could have clusters that are chosen that exist in both English
-   and Spanish. P1 - consider duplicate file if too much trouble reorganizing code.
-   
-   TODO: maybe ensure that only the client's data is getting picked up? Or 
-   maybe just have this menu in case there are participants, and default would
-   be to just get all records.
-   3/24/16 - got option pane w/participant names for session. However,
-   this might be annoying to have to choose participants for _every_ session.
-   In any case, next step is to store whatever user chose, and make sure to
-   filter out only records that match this speaker. 
-   8/7/16 - ideally we will want to have the user able to choose who they are
-   getting the inventory for, but if that will take too much time, just have it
-   coded for one person. (P3)
-   
-   TODO: Try to understand how this could have been implemented with closures.
-   */
