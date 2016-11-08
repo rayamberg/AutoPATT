@@ -308,6 +308,38 @@ class EnglishSpeaker extends Speaker {
 	public List getTreatmentTargets() { 
 		return ["under", "construction"]
 	}
+	
+	private List PATTStepOne() {
+		//out.println "In PATTStepOne()"
+		/* if any s/CC/ clusters are in the inventory, return empty 
+		QUESTION: is this only any ENGLISH clusters, or ANY s/CC/? Assuming any
+		QUESTION: Any /s/? Or should it be any /s/ with no diacritics?
+		*/
+		targets = []
+		for (cluster in this.clusters ) {
+			IPATranscript ipa = IPATranscript.parseIPATranscript(cluster)
+			if (ipa[0].basePhone == (Character) "s" && cluster.length() >= 3) {
+				//out.println "Found /s/ cluster"
+				return [];
+			}
+		}
+		
+		/* if "kw", "pr", "tr", "kr", or "pl" can be constructed from phonemes
+		in the phonemic inventory, prepend /s/ to it and return it as a target.
+		QUESTION: count base phones or not? */
+		allowedClusters = ["kw", "pɹ", "tɹ", "kɹ", "pl"]
+		c2s = this.phonemes.findAll{ ["p", "t", "k"].contains(it) }
+		c3s = this.phonemes.findAll{ ["w", "l", "ɹ"].contains(it) }
+		for (c2 in c2s ) {
+			for (c3 in c3s) {
+				if ( allowedClusters.contains(c2 + c3) ) {
+					//out.println "Looking at $c2 and $c3"
+					targets.add("s"+c2+c3)
+				}
+			}
+		}
+		return targets	
+	}
 }
 
 class SpanishSpeaker extends Speaker {
