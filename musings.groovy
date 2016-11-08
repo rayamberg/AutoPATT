@@ -18,6 +18,26 @@ class PhoneticInventory {
 	static private IPATokens ipaTokens = new IPATokens();
 	private Map inventoryMap;
 	
+	/* create a PhoneticInventory from Phon records */
+	PhoneticInventory(records, out) {
+		inventoryMap = [:]
+		records.each{ record ->
+			record.IPAActual.each { transcript ->
+				transcript.findAll { it instanceof Phone}.each {
+					/* For a compound tesh, getBasePhone() outputted an 'x' */
+					out.println "$it - " + ipaTokens.getTokenType( it.getBasePhone() );
+					if ( isConsonant(it) ) {
+						def phone = it.text
+						//def phone = it; //attempting to store the object, not string
+						/* Count occurrences of each phone */
+						def i = inventoryMap[phone]
+						inventoryMap[phone] = i ? ++i : 1
+					}
+				}
+			}
+		}
+	}
+	
 	List getInventory() {
 		return inventoryMap.findAll{ it.value > 1 }.collect{ it.key }
 	}
@@ -65,10 +85,9 @@ and an interface to output this information. */
   	public abstract Map getSonorityValues()
   	public abstract List getTreatmentTargets()
   	
-  	/* This should eventually be Speaker(transcripts). Leave it like this
-  	until redesign is over */
-  	public Speaker() {
-  		this.phoneticInv = new PhoneticInventory()
+  	/* This should eventually be Speaker(records, meanings). */
+  	public Speaker(records, out) {
+  		this.phoneticInv = new PhoneticInventory(records, out)
   	}
   	
   	public List getClusters() {
@@ -122,7 +141,12 @@ class EnglishSpeaker extends Speaker {
   	  "θɹ", "ʃɹ", "fl", "sl", "vj", "mj", "sm", "sn", "sp", "st", "sk", "skw",
   	  "spɹ", "stɹ", "skɹ", "spl" ]  	
 	
- 	public Map getSonorityValues() {
+ 	
+  	public EnglishSpeaker(records, out) {
+  		super(records, out)
+  	}
+  	
+  	public Map getSonorityValues() {
 		return SAE_PHONES
 	} 	
   	  
@@ -179,4 +203,21 @@ class SpanishSpeaker extends Speaker {
 	public List getTreatmentTargets() {
 		return ["under", "construction"]
 	}
+}
+
+def project = window.project
+if (project == null) return
+
+def sessionSelector = new SessionSelector(project)
+def scroller = new JScrollPane(sessionSelector)
+JOptionPane.showMessageDialog(window, scroller)
+	
+def sessions = sessionSelector.selectedSessions;
+if(sessions.size() == 0) return
+	
+sessions.each { sessionLoc ->
+	session = project.openSession(sessionLoc.corpus, sessionLoc.session)
+	count = session.recordCount
+	println "Session: $sessionLoc \n\t $count records";
+	eng = new EnglishSpeaker(session.records, getBinding().out)
 }
