@@ -1,6 +1,47 @@
-class PhoneticInventory { }
-class PhonemicInventory { }
-class ClusterInventory { }
+import au.com.bytecode.opencsv.CSVWriter;
+
+import javax.swing.JOptionPane;
+import javax.swing.JScrollPane;
+import javax.swing.JComboBox;
+import javax.swing.JFileChooser;
+import javax.swing.filechooser.FileNameExtensionFilter
+
+import ca.phon.ipa.*;
+import ca.phon.ipa.parser.*;
+import ca.phon.app.session.*;
+import ca.phon.ipa.features.CompoundFeatureComparator;
+import ca.phon.ipa.features.FeatureComparator;
+import ca.phon.ipa.tree.*;
+import ca.phon.phonex.*;
+
+class PhoneticInventory { 
+	static private IPATokens ipaTokens = new IPATokens();
+	private Map inventoryMap;
+	
+	List getInventory() {
+		return inventoryMap.findAll{ it.value > 1 }.collect{ it.key }
+	}
+	
+	static boolean isConsonant(c) {
+  	  if ( !(c instanceof Phone)) 
+		  return false
+	  
+	  def tokenType = ipaTokens.getTokenType( c.getBasePhone() );
+	  if ( tokenType == IPATokenType.CONSONANT || 
+	  	  tokenType == IPATokenType.GLIDE ) 
+	    return true
+	  else
+		return false
+	}
+}
+
+class PhonemicInventory { 
+
+}
+
+class ClusterInventory { 
+
+}
 
 interface Language {
 	List getModelPhones()
@@ -24,6 +65,12 @@ and an interface to output this information. */
   	public abstract Map getSonorityValues()
   	public abstract List getTreatmentTargets()
   	
+  	/* This should eventually be Speaker(transcripts). Leave it like this
+  	until redesign is over */
+  	public Speaker() {
+  		this.phoneticInv = new PhoneticInventory()
+  	}
+  	
   	public List getClusters() {
   		return this.clusterInv.inventory
   	}
@@ -31,10 +78,18 @@ and an interface to output this information. */
   	public List getPhones() {
   		return this.phoneticInv.inventory	
   	}
-  	  	
+  	
+  	public List getOutPhones() {
+  		return this.modelPhones - this.modelPhones.intersect(this.phones)	
+  	}
+  	
   	public List getPhonemes() {
   		return this.phonemicInv.inventory	
   	}
+  	
+  	public List getOutPhonemes() {
+  		return this.modelPhones - this.modelPhones.intersect(this.phonemes)
+	}
   	
   	public Integer getSonorityDistance(String s) {
   		if (this.sonorityValues.containsKey(s[0]) && this.sonorityValues.containsKey(s[1])) {
