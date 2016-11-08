@@ -229,6 +229,7 @@ and an interface to output this information. */
   	
   	public Speaker(records, out) {
   		this.phonemicInv = new PhonemicInventory(records, out)
+  		this.phoneticInv = this.phonemicInv.phoneticInv
   		this.clusterInv = new ClusterInventory(records, out)
   	}
   	
@@ -236,6 +237,10 @@ and an interface to output this information. */
   		return this.clusterInv.inventory
   	}
 
+  	public List getOutClusters() {
+  		return this.modelClusters - this.modelClusters.intersect(this.clusters)
+  	}
+  	
   	public List getPhones() {
   		return this.phoneticInv.inventory	
   	}
