@@ -427,6 +427,34 @@ class EnglishSpeaker extends Speaker {
 		}
 		return targets
 	}	
+
+	private List PATTStepThree() {
+		targetPool = this.outPhones
+		
+		/* First, remove all stimulable sounds: since we haven't implemented 
+		stimulable sounds yet, skipping this...*/
+		
+		/* Cross out early acquired sounds. For english this is [p, b, t, d, k, g,
+		f, v, m, n, ŋ, w, j, h] */
+		earlySounds = ["p", "b", "t", "d", "k", "ɡ", "f", "v", "m", "n", "ŋ", "w",
+					   "j", "h"]
+		targetPool = targetPool - targetPool.intersect( earlySounds )
+		
+		/* Choose sounds that will lead to the most system-wide change. 
+		NOTE: THIS ALGORITHM NEEDS TO BE MADE MORE CLEAR. CHECK WITH DR. BARLOW. For
+		example, if we see an affricate, do we ignore everything else? Do we pick
+		all sounds that trump another sound? Skipping this step for now */
+		
+		/* From the list of common sounds sorted from most to least, pick the first
+		one we see from the targetPool 
+		NOTE: need to change from hard coding to account for other languages */
+		commonSounds = ["ɹ", "l", "s", "z", "ð", "θ", "ʃ", "ʤ", "ʧ", "ʒ"]
+		targets = []
+		for (sound in commonSounds)
+			if (targetPool.contains(sound)) targets.add(sound)
+		
+		return targets
+	}
 	
 }
 
