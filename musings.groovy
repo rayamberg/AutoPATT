@@ -103,16 +103,16 @@ class PhonemicInventory {
 				/* Go through each phone in both keys until we find contrast */
 				for (i in 0 .. key.length() - 1) {
 					/* phones to compare */
-					def p1 = key[i];
-					def p2 = pair[i];
+					def p1 = key[i]
+					def p2 = pair[i]
 					
 					if ( PhoneticInventory.isConsonant(p1) &&
 					PhoneticInventory.isConsonant(p2) && 
-				    this.phoneticInv.inventory.contains(p1.getText()) &&
+				    this.phoneticInv.inventory.contains(p1.text)) &&
 				    this.meanings[key.toString()] != this.meanings[pair.toString()] ) {
 						/* if the consonants don't match we should have a 
 						minimal pair with a consonant contrast here */
-						if ( p1.getText() != p2.getText() && !(doneContrast[i])) {
+						if ( p1.text != p2.text && !(doneContrast[i])) {
 						  
 						  //out.println "Comparing type " + key[i].getClass() + 
 						  //  " and type " + pair[i].getClass();
@@ -123,8 +123,8 @@ class PhonemicInventory {
                              QUESTION: For contrasts in meaning, should
                              we care about homonyms? */					      
 					      
-						  def count = this.inventoryMap[ p1.getText() ];
-						  this.inventoryMap[ p1.getText() ] = count ? ++count : 1;
+						  def count = this.inventoryMap[ p1.text ];
+						  this.inventoryMap[ p1.text ] = count ? ++count : 1;
 						  doneContrast[i] = 1;
 						  /*out.println "Non-match between $p1 and $p2, inventoryMap[$p1] = " +
 						    inventoryMap[p1.getText()];*/
