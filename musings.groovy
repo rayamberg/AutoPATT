@@ -340,6 +340,94 @@ class EnglishSpeaker extends Speaker {
 		}
 		return targets	
 	}
+
+	private List PATTStepTwo() {
+		targetPool = this.modelClusters.findAll{it.length() == 2}
+		//println "PATTStepTwo: targetPool: " + targetPool
+		
+		/* Remove IN clusters */
+		//println "PATTStepTwo: Removing IN clusters..."
+		targetPool = targetPool - targetPool.intersect( this.clusters )
+		//println "PATTStepTwo: targetPool: " + targetPool
+		
+		if (!targetPool) return null
+		
+		/* Get minimum sonority distance (MSD) and remove all clusters with MSD
+		greater than or equal to that sonority distance */
+		//println "Getting cluster inventory of 2"
+		clusters = this.clusters.findAll{ it.length() == 2 }
+		/* If there aren't any clusters in the inventory, set sonority distance to
+		a number beyond the max. This is a hack that needs to be fixed */
+		//println "Attempting function getMinSonorityDistance"
+		msd = this.getMinSonorityDistance(clusters)
+		if (msd == null) msd = 10
+		//println "PATTStepTwo: msd: $msd"
+		removables = targetPool.findAll{ this.getSonorityDistance(it) >= msd }
+		println "PATTStepTwo: removables: $removables"
+		targetPool = targetPool - targetPool.intersect( removables )
+		println "PATTStepTwo: Removed clusters with msd >= $msd"
+		println "PATTStepTwo: targetPool: " + targetPool
+		
+		if (!targetPool) return null
+		
+		/* Remove clusters with SD=-2 and /C/j clusters 
+		   Note: if you're working with non-english, the /C/j clusters should
+		   not be hard coded
+		   Note: due to changes in sonority, SD=-2 is now SD=-4*/
+		removables = targetPool.findAll{ this.getSonorityDistance(it) == -4 || 
+		["pj", "bj", "fj", "vj", "mj"].contains(it) }
+		//println "PATTStepTwo: removables: $removables"
+		targetPool = targetPool - targetPool.intersect( removables )
+		//println "PATTStepTwo: Removed /C/j clusters and SD=-2 clusters"
+		//println "PATTStepTwo: targetPool: " + targetPool
+		
+		if (!targetPool) return null
+			
+		/* If the pool contains /sw, sl, sm, or sn/ determine the error pattern in 
+	these clusters, e.g. /sn/->/s/ or /sn/->n. If error patterns are similar to
+	/sp, st, sk/, remove the clusters. If they are different, keep them in pool. If
+	it is unclear, remove the clusters
+	NOTE: A MORE CLEAR ALGORITHM IS NECESSARY HERE. TALK TO DR. BARLOW 
+	NOTE: This will involve comparing orthography or IPA Target to IPA Actual
+	QUESTION: What if they're similar to other s clusters, but not similar to non-s
+	clusters? How should we deal with non-s clusters 
+	NOTE: For now, I'm just going to remove the clusters. 
+	PHIL: Maybe separate these clusters for now, and print them out separately
+	as "here are your potential 2-element 's' clusters */
+		//clusters = clusterInv.inventory.findAll{ ["sw", "sl", "sm", "sn"].contains(it) }
+		removables = targetPool.findAll{ ["sw", "sl", "sm", "sn"].contains(it) }
+		targetPool = targetPool - targetPool.intersect( removables )
+		if (removables) {
+			/* This is where the potential 2-element clusters can be added
+			to the CSV file */
+			//println "PATTStepTwo: Consider " + removables.join(",")
+			//csv.writeNext("Potential Cluster Targets after Step Two: ")
+			//csv.writeNext(removables as String[])
+		}
+		//println "PATTStepTwo: Removed sw, sl, sm, sn for now"
+		//println "PATTStepTwo: targetPool: " + targetPool
+		
+		if (!targetPool) return null
+			
+		/* Find smallest sonority distance in targetPool. If there is more
+	than one, find those with an OUT phone and return them as a treatment
+	target list. */
+		msd = this.getMinSonorityDistance(targetPool)
+		removables = targetPool.findAll{ this.getSonorityDistance(it) > msd }
+		targetPool = targetPool - targetPool.intersect( removables )
+		//println "PATTStepTwo: Removed all from target pool >= $msd"
+		//println "PATTStepTwo: targetPool: " + targetPool
+		targets = []
+		for (cluster in targetPool) {
+			for (phone in cluster)
+			  if (this.outPhones.contains(phone)) {
+				  targets.add(cluster)
+				  break
+			  }
+		}
+		return targets
+	}	
+	
 }
 
 class SpanishSpeaker extends Speaker {
