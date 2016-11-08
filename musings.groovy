@@ -15,8 +15,8 @@ import ca.phon.ipa.tree.*;
 import ca.phon.phonex.*;
 
 class PhoneticInventory { 
-	static private IPATokens ipaTokens = new IPATokens();
-	private Map inventoryMap;
+	static private IPATokens ipaTokens = new IPATokens()
+	private Map inventoryMap
 	
 	/* create a PhoneticInventory from Phon records */
 	PhoneticInventory(records, out) {
@@ -25,7 +25,7 @@ class PhoneticInventory {
 			record.IPAActual.each { transcript ->
 				transcript.findAll { it instanceof Phone}.each {
 					/* For a compound tesh, getBasePhone() outputted an 'x' */
-					out.println "$it - " + ipaTokens.getTokenType( it.getBasePhone() );
+					out.println "$it - " + ipaTokens.getTokenType( it.getBasePhone() )
 					if ( isConsonant(it) ) {
 						def phone = it.text
 						//def phone = it; //attempting to store the object, not string
@@ -56,7 +56,125 @@ class PhoneticInventory {
 }
 
 class PhonemicInventory { 
+	private Map inventoryMap, meanings
+	private PhoneticInventory phoneticInv
+	private IpaTernaryTree minPairs
 
+	PhonemicInventory(records, out) {
+		this.inventoryMap = [:]
+		this.meanings = [:]
+		this.phoneticInv = new PhoneticInventory(records, out)
+		this.minPairs = new IpaTernaryTree( 
+		  new CompoundFeatureComparator(
+		    FeatureComparator.createPlaceComparator()))
+		
+		/* First initialize minPair HashSets and populate meanings Map */
+		records.each { record ->
+			record.orthography.eachWithIndex { tier, index ->
+				def words = tier.toString().tokenize()
+				/* If there are more orthos than productions...*/
+				if (words.count{it} != record.IPAActual[index].words().count{it})
+					out.println "Orthography <-> IPA Actual Count Mismatch!"
+				
+				record.IPAActual[index].words().findAll{it.contains("\\w")}.eachWithIndex { utt, i ->
+					//every word in the word tree gets an empty hash set.
+					this.minPairs.put(utt, new HashSet<IPATranscript>());
+					//out.println "meanings[$utt] = ${words[i]}"
+					/*map the utterance to orthography. This is too rudimentary. What
+					if the child has the same utterance for different meanings? What
+					about homonyms? It needs to be a mapping to a list, not a string. 
+					It's not a 1:1 mapping*/
+					this.meanings[utt.toString()] = words[i];
+				}
+			}
+		}
+		
+		/* Now populate minPairs */
+		buildMinPairs()
+		
+		/* Now build phonemic inventory */
+		def wordKeys = minPairs.keySet()
+		def doneContrast = [] /* For rule 4 */
+		
+		wordKeys.each { key ->
+			def pairs = this.minPairs.get(key);
+			
+			pairs.each { pair ->
+				/* Go through each phone in both keys until we find contrast */
+				for (i in 0 .. key.length() - 1) {
+					/* phones to compare */
+					def p1 = key[i];
+					def p2 = pair[i];
+					
+					if ( PhoneticInventory.isConsonant(p1) &&
+					PhoneticInventory.isConsonant(p2) && 
+				    this.phoneticInv.inventory.contains(p1.getText()) &&
+				    this.meanings[key.toString()] != this.meanings[pair.toString()] ) {
+						/* if the consonants don't match we should have a 
+						minimal pair with a consonant contrast here */
+						if ( p1.getText() != p2.getText() && !(doneContrast[i])) {
+						  
+						  //out.println "Comparing type " + key[i].getClass() + 
+						  //  " and type " + pair[i].getClass();
+					      
+					      /* QUESTION: Does it count if we compare
+					      against something NOT in the phonetic inventory? 
+                                                 ANSWER: YES 
+                             QUESTION: For contrasts in meaning, should
+                             we care about homonyms? */					      
+					      
+						  def count = this.inventoryMap[ p1.getText() ];
+						  this.inventoryMap[ p1.getText() ] = count ? ++count : 1;
+						  doneContrast[i] = 1;
+						  /*out.println "Non-match between $p1 and $p2, inventoryMap[$p1] = " +
+						    inventoryMap[p1.getText()];*/
+						  out.println "$key/$pair: Found contrast for $p1 and $p2"
+						  /*out.println "meanings[$key] = " + meanings[key.toString()] + 
+						    "; meanings[$pair] = " + meanings[pair.toString()]*/
+					    }
+					}	
+				}
+			}
+			doneContrast = []; /*clear doneContrast for next word*/
+		}	
+		
+	}
+
+	IpaTernaryTree buildMinPairs() {
+		def wordKeys = minPairs.keySet()
+		
+		wordKeys.each { key ->
+			def pairs = minPairs.get(key)
+			
+			wordKeys.each { key2 ->
+				if(key == key2) return
+				if(key.length() != key2.length()) return /* My addition -rsa */
+				if(meanings[key.toString()] == meanings[key2.toString()]) return /* Also mine -rsa */
+				if(key.getExtension(LevenshteinDistance).distance(key2) == 1) {
+					for (i in 0 .. key.length() - 1) {
+						def p1 = key[i]
+						def p2 = key2[i]
+						/* Find the contrast */
+						if (p1.getText() != p2.getText()) {
+						 /* If the contrast is on consonant versus consonant
+						 then add it. Later we can add similar logic for vowels
+						 too */
+						  if (PhoneticInventory.isConsonant(p1) &&
+						  PhoneticInventory.isConsonant(p2)) {
+						  	  pairs.add(key2)
+						  }
+						}
+					}
+				}
+			}
+		}
+		
+		return minPairs
+	}
+	
+	List getInventory() {
+		return inventoryMap.findAll{ it.value > 1 }.collect{ it.key }
+	}
 }
 
 class ClusterInventory { 
@@ -85,9 +203,8 @@ and an interface to output this information. */
   	public abstract Map getSonorityValues()
   	public abstract List getTreatmentTargets()
   	
-  	/* This should eventually be Speaker(records, meanings). */
   	public Speaker(records, out) {
-  		this.phoneticInv = new PhoneticInventory(records, out)
+  		this.phonemicInv = new PhonemicInventory(records, out)
   	}
   	
   	public List getClusters() {
@@ -214,10 +331,13 @@ JOptionPane.showMessageDialog(window, scroller)
 	
 def sessions = sessionSelector.selectedSessions;
 if(sessions.size() == 0) return
-	
+
+records = []
 sessions.each { sessionLoc ->
 	session = project.openSession(sessionLoc.corpus, sessionLoc.session)
-	count = session.recordCount
-	println "Session: $sessionLoc \n\t $count records";
-	eng = new EnglishSpeaker(session.records, getBinding().out)
+	count = session.getRecordCount()
+	println "Session: $sessionLoc \n\t $count records"
+	records += session.records
 }
+
+eng = new EnglishSpeaker(records, getBinding().out)
