@@ -108,7 +108,7 @@ class PhonemicInventory {
 					
 					if ( PhoneticInventory.isConsonant(p1) &&
 					PhoneticInventory.isConsonant(p2) && 
-				    this.phoneticInv.inventory.contains(p1.text)) &&
+				    this.phoneticInv.inventory.contains(p1.text) &&
 				    this.meanings[key.toString()] != this.meanings[pair.toString()] ) {
 						/* if the consonants don't match we should have a 
 						minimal pair with a consonant contrast here */
@@ -178,7 +178,31 @@ class PhonemicInventory {
 }
 
 class ClusterInventory { 
-
+	static private PhonexPattern pattern = 
+	  PhonexPattern.compile("^\\s<,1>(cluster=\\c\\c+)")
+	private Map inventoryMap = [:]
+	
+	ClusterInventory(records, out) {
+		records.each { record->
+			record.IPAActual.each { transcript ->
+				/* find two- and three- element word-initial clusters */
+				transcript.words().each { word->
+					def PhonexMatcher matcher = pattern.matcher(word)
+					if (matcher.find()) {
+						def clusterTokens = matcher.group(
+						  pattern.groupIndex("cluster"))
+						def cluster = clusterTokens.join()
+						def count = inventoryMap[ cluster ]
+						inventoryMap[ cluster ] = count ? ++count : 1
+					}
+				}
+			}
+		}
+	}
+	
+	List getInventory() {
+		return inventoryMap.findAll{ it.value > 1 }.collect{ it.key }
+	}	
 }
 
 interface Language {
@@ -205,6 +229,7 @@ and an interface to output this information. */
   	
   	public Speaker(records, out) {
   		this.phonemicInv = new PhonemicInventory(records, out)
+  		this.clusterInv = new ClusterInventory(records, out)
   	}
   	
   	public List getClusters() {
