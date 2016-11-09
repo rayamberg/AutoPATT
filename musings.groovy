@@ -224,7 +224,7 @@ a client's phonetic, phonemic, and cluster inventories; the steps for
 determining treatment target selection; the inventory "rules" for the specific
 language, e.g. allowable phones in English, allowable clusters in Spanish, etc.,
 and an interface to output this information. */
-	private CSVWriter csv
+	public CSVWriter csv
     public PhoneticInventory phoneticInv
   	public PhonemicInventory phonemicInv
   	public ClusterInventory clusterInv
@@ -237,7 +237,14 @@ and an interface to output this information. */
   	public abstract List PATT()
   	
   	/* CSVWrite Interface */
-  	abstract public void writeCSV(ClusterInventory clusterInv)
+  	public void writeCSV(ClusterInventory clusterInv) {
+  		this.csv.writeNext("CLUSTER INVENTORY:")
+		this.csv.writeNext(clusterInv.inventory.sort{x,y ->
+			this.getSonorityDistance(x) <=> this.getSonorityDistance(y)
+			} as String[])
+		this.csv.writeNext("")
+  	}
+  	
 	abstract public void writeCSV(PhonemicInventory phonemicInv)
 	abstract public void writeCSV(PhoneticInventory phoneticInv)
   	
@@ -472,11 +479,159 @@ class EnglishSpeaker extends Speaker {
 		return targets
 	}
 
-  	public void writeCSV(ClusterInventory clusterInv) {
-  	}
-	public void writeCSV(PhonemicInventory phonemicInv) {
-	}
 	public void writeCSV(PhoneticInventory phoneticInv) {
+		/* Algorithm something like this: 
+		1) Have pre-created 8x22 IPA list of consonants, all values set to false
+		and pre-created map which will store key:values of all variants of the 
+		basePhone, e.g. basePhoneMap["t":["tʷ","t","t̪"]]
+		2) Go through each phone in phonetic inventory, convert to IPATranscript
+		3) get Phone from IPATranscript.
+		4) get basePhone from Phone.
+		5) if basePhone VALUE is null, create list, otherwise append inventory
+		phone to existing list.
+		6) for each row in map, filter out and print all true values.*/
+
+		def basePhones = [
+		["p","b",null,null,null,null,"t","d",null,null,"ʈ","ɖ","c","ɟ","k","ɡ",
+		"q","ɢ",null,null,"ʔ","ʡ"],
+		[null,"m",null,"ɱ",null,null,null,"n",null,null,null,"ɳ",null,"ɲ",null,
+		"ŋ",null,"ɴ"],
+		["ɸ","β","f","v","θ","ð","s","z","ʃ","ʒ","ʂ","ʐ","ç","ʝ","x","ɣ","χ",
+		"ʁ","ħ","ʕ","h","ɦ"],
+		[null,null,null,null,null,null,"ɬ","ɮ",null,null,"ɕ","ʑ",null,null,
+		"ɧ",null,null,null,null,null,"ʜ","ʢ"],
+		[null,null,null,null,null,null,"ʦ","ʣ","ʧ","ʤ","ʨ","ʥ","ƛ","λ"],
+		[null,null,"ʙ","ⱱ",null,null,"ɾ","r",null,"ɹ","ɽ","ɻ",null,null,
+		null,null,null,"ʀ"],
+		[null,null,null,null,null,null,"ɺ","l",null,"ɫ",null,"ɭ",null,"ʎ",
+		null,"ʟ"],
+		["ʍ","w",null,"ʋ",null,null,null,null,null,"ɥ",null,null,null,
+		"j",null,"ɰ"]
+		]
+		def placeHeaders = ["", "bilabial", "", "labiodental", "", "interdental", "", 
+		"alveolar", "", "palatoalveolar", "", "retroflex", "", "palatal", "", 
+		"velar", "", "uvular", "", "pharyngeal", "", "glottal", ""]
+		def mannerHeaders = ["plosive", "nasal", "fricative", "other fricative",
+		"affricate", "approximant", "lateral", "glide"]
+	
+		def basePhoneMap = [:]
+		
+		phoneticInv.inventory.each { phone ->
+		  IPATranscript ipa = IPATranscript.parseIPATranscript(phone)
+		  mainLoop:
+		  for (List row : basePhones) {
+		  	  for (String item : row) {
+		  	  	  if ( !(ipa[0] instanceof CompoundPhone) && 
+		  	  	  (Character) item == ipa[0].basePhone) {
+		  	  	  	  //out.println "Found a match"
+		  	  	  	  if (basePhoneMap[item])
+		  	  	  	  	  basePhoneMap[item].add(ipa[0])
+		  	  	  	  else 
+		  	  	  	  	  basePhoneMap[item] = [ ipa[0] ]
+		  	  	  	  		  	  	  	  
+		  	  	  	  break mainLoop
+		  	  	  }
+		  	  }
+		  }
+		}
+		
+		this.csv.writeNext("PHONETIC INVENTORY:")
+		this.csv.writeNext(placeHeaders as String[])
+		def csvRow = []
+		
+		basePhones.eachWithIndex { row, i ->
+			csvRow.add(mannerHeaders[i])
+			row.each  {
+				if (basePhoneMap[it]) {
+					//out.printf basePhoneMap[it].join(",") + " \r"
+					csvRow.add(basePhoneMap[it].join(","))
+				} else {
+					//out.printf " "
+					csvRow.add(" ")
+				}
+			}
+			this.csv.writeNext(csvRow as String[])
+			csvRow = []
+		}
+		this.csv.writeNext("")
+	}
+	
+	public void writeCSV(PhonemicInventory phonemicInv) {		
+		def wordKeys = phonemicInv.minPairs.keySet();
+		this.csv.writeNext("Minimal Pairs:")
+		wordKeys.each { key ->
+			def pairs = phonemicInv.minPairs.get(key) as Queue;
+			
+			if(pairs.size() > 0) {
+				pairs.offerFirst(key)
+				this.csv.writeNext(pairs as String[])
+				//csv.writeNext("$key:$pairs")
+			}
+		}
+		this.csv.writeNext("")
+		
+		def basePhones = [
+		["p","b",null,null,null,null,"t","d",null,null,"ʈ","ɖ","c","ɟ","k","ɡ",
+		"q","ɢ",null,null,"ʔ","ʡ"],
+		[null,"m",null,"ɱ",null,null,null,"n",null,null,null,"ɳ",null,"ɲ",null,
+		"ŋ",null,"ɴ"],
+		["ɸ","β","f","v","θ","ð","s","z","ʃ","ʒ","ʂ","ʐ","ç","ʝ","x","ɣ","χ",
+		"ʁ","ħ","ʕ","h","ɦ"],
+		[null,null,null,null,null,null,"ɬ","ɮ",null,null,"ɕ","ʑ",null,null,
+		"ɧ",null,null,null,null,null,"ʜ","ʢ"],
+		[null,null,null,null,null,null,"ʦ","ʣ","ʧ","ʤ","ʨ","ʥ","ƛ","λ"],
+		[null,null,"ʙ","ⱱ",null,null,"ɾ","r",null,"ɹ","ɽ","ɻ",null,null,
+		null,null,null,"ʀ"],
+		[null,null,null,null,null,null,"ɺ","l",null,"ɫ",null,"ɭ",null,"ʎ",
+		null,"ʟ"],
+		["ʍ","w",null,"ʋ",null,null,null,null,null,"ɥ",null,null,null,
+		"j",null,"ɰ"]
+		]
+		def placeHeaders = ["", "bilabial", "", "labiodental", "", "interdental", "", 
+		"alveolar", "", "palatoalveolar", "", "retroflex", "", "palatal", "", 
+		"velar", "", "uvular", "", "pharyngeal", "", "glottal", ""]
+		def mannerHeaders = ["plosive", "nasal", "fricative", "other fricative",
+		"affricate", "approximant", "lateral", "glide"]
+		
+		def basePhoneMap = [:]
+		
+		phonemicInv.inventory.each { phone ->
+		  IPATranscript ipa = IPATranscript.parseIPATranscript(phone)
+		  mainLoop:
+		  for (List row : basePhones) {
+		  	  for (String item : row) {
+		  	  	  if ((Character) item == ipa[0].basePhone) {
+		  	  	  	  //out.println "Found a match"
+		  	  	  	  if (basePhoneMap[item])
+		  	  	  	  	  basePhoneMap[item].add(ipa[0])
+		  	  	  	  else 
+		  	  	  	  	  basePhoneMap[item] = [ ipa[0] ]
+		  	  	  	  		  	  	  	  
+		  	  	  	  break mainLoop
+		  	  	  }
+		  	  }
+		  }
+		}
+		
+		this.csv.writeNext("PHONEMIC INVENTORY:")
+		this.csv.writeNext(placeHeaders as String[])
+		def csvRow = []
+		
+		basePhones.eachWithIndex { row, i ->
+			csvRow.add(mannerHeaders[i])
+			row.each  {
+				if (basePhoneMap[it]) {
+					//out.printf basePhoneMap[it].join(",") + " \r"
+					csvRow.add(basePhoneMap[it].join(","))
+				} else {
+					//out.printf " "
+					csvRow.add(" ")
+				}
+			}
+			this.csv.writeNext(csvRow as String[])
+			csvRow = []
+		}
+		this.csv.writeNext("")
 	}
 	
 }
@@ -523,10 +678,9 @@ class SpanishSpeaker extends Speaker {
 		return this.treatmentTargets	
 	}
 	
-	public void writeCSV(ClusterInventory clusterInv) {
-  	}
 	public void writeCSV(PhonemicInventory phonemicInv) {
 	}
+	
 	public void writeCSV(PhoneticInventory phoneticInv) {
 	}
 }
@@ -563,4 +717,7 @@ sessions.each { sessionLoc ->
 }
 
 eng = new EnglishSpeaker(records, getBinding().out, csv)
+eng.writeCSV(eng.phoneticInv)
+eng.writeCSV(eng.phonemicInv)
+eng.writeCSV(eng.clusterInv)
 csv.close()
