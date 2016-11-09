@@ -212,7 +212,13 @@ interface Language {
 	List PATT()
 }
 
-abstract class Speaker implements Language {
+interface CSVWrite {
+	void writeCSV(ClusterInventory clusterInv)
+	void writeCSV(PhonemicInventory phonemicInv)
+	void writeCSV(PhoneticInventory phoneticInv)
+}
+
+abstract class Speaker implements Language, CSVWrite {
 /* Should contain all important data structures for analyzing
 a client's phonetic, phonemic, and cluster inventories; the steps for 
 determining treatment target selection; the inventory "rules" for the specific
@@ -224,10 +230,16 @@ and an interface to output this information. */
   	public ClusterInventory clusterInv
   	public List treatmentTargets
   	
+  	/* Language Interface */
   	public abstract List getModelPhones() 
   	public abstract List getModelClusters()
   	public abstract Map getSonorityValues()
   	public abstract List PATT()
+  	
+  	/* CSVWrite Interface */
+  	abstract public void writeCSV(ClusterInventory clusterInv)
+	abstract public void writeCSV(PhonemicInventory phonemicInv)
+	abstract public void writeCSV(PhoneticInventory phoneticInv)
   	
   	public Speaker(records, out, csv) {
   		this.phonemicInv = new PhonemicInventory(records, out)
@@ -277,10 +289,6 @@ and an interface to output this information. */
 		}
 			//out.println "msd is $msd"
 		return msd
-  	}
-  	
-  	public void writeCSV() {
-  		this.csv.writeNext("Hello World")
   	}
 }
 
@@ -463,6 +471,13 @@ class EnglishSpeaker extends Speaker {
 		
 		return targets
 	}
+
+  	public void writeCSV(ClusterInventory clusterInv) {
+  	}
+	public void writeCSV(PhonemicInventory phonemicInv) {
+	}
+	public void writeCSV(PhoneticInventory phoneticInv) {
+	}
 	
 }
 
@@ -507,6 +522,13 @@ class SpanishSpeaker extends Speaker {
 		this.treatmentTargets = ["under", "construction"]
 		return this.treatmentTargets	
 	}
+	
+	public void writeCSV(ClusterInventory clusterInv) {
+  	}
+	public void writeCSV(PhonemicInventory phonemicInv) {
+	}
+	public void writeCSV(PhoneticInventory phoneticInv) {
+	}
 }
 
 /* Prepare CSV file */
@@ -541,5 +563,4 @@ sessions.each { sessionLoc ->
 }
 
 eng = new EnglishSpeaker(records, getBinding().out, csv)
-eng.writeCSV()
 csv.close()
