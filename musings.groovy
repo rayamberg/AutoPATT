@@ -19,13 +19,13 @@ class PhoneticInventory {
 	private Map inventoryMap
 	
 	/* create a PhoneticInventory from Phon records */
-	PhoneticInventory(records, out) {
+	PhoneticInventory(records) {
 		inventoryMap = [:]
 		records.each{ record ->
 			record.IPAActual.each { transcript ->
 				transcript.findAll { it instanceof Phone}.each {
 					/* For a compound tesh, getBasePhone() outputted an 'x' */
-					out.println "$it - " + ipaTokens.getTokenType( it.getBasePhone() )
+					//out.println "$it - " + ipaTokens.getTokenType( it.getBasePhone() )
 					if ( isConsonant(it) ) {
 						def phone = it.text
 						//def phone = it; //attempting to store the object, not string
@@ -63,7 +63,7 @@ class PhonemicInventory {
 	PhonemicInventory(records, out) {
 		this.inventoryMap = [:]
 		this.meanings = [:]
-		this.phoneticInv = new PhoneticInventory(records, out)
+		this.phoneticInv = new PhoneticInventory(records)
 		this.minPairs = new IpaTernaryTree( 
 		  new CompoundFeatureComparator(
 		    FeatureComparator.createPlaceComparator()))
@@ -225,6 +225,7 @@ determining treatment target selection; the inventory "rules" for the specific
 language, e.g. allowable phones in English, allowable clusters in Spanish, etc.,
 and an interface to output this information. */
 	public CSVWriter csv
+	protected PrintWriter out
     public PhoneticInventory phoneticInv
   	public PhonemicInventory phonemicInv
   	public ClusterInventory clusterInv
@@ -253,6 +254,7 @@ and an interface to output this information. */
   		this.phoneticInv = this.phonemicInv.phoneticInv
   		this.clusterInv = new ClusterInventory(records, out)
   		this.csv = csv
+  		this.out = out
   	}
   	
   	public List getClusters() {
@@ -334,9 +336,13 @@ class EnglishSpeaker extends Speaker {
 		for (pattStep in methods.keySet()) {
 			this.treatmentTargets = methods[pattStep]()
 			if (this.treatmentTargets) {
+				this.out.println("Treatment targets found after $pattStep")
 				this.csv.writeNext("Targets after $pattStep: ")
 				this.csv.writeNext(this.treatmentTargets as String[])
 				return this.treatmentTargets
+			} else {
+				this.out.println("No treatment targets found after $pattStep")
+				this.csv.writeNext("No treatment targets found after $pattStep") 
 			}
 		}
 		this.csv.writeNext("Error: no targets found!")
@@ -353,7 +359,7 @@ class EnglishSpeaker extends Speaker {
 		for (cluster in this.clusters ) {
 			IPATranscript ipa = IPATranscript.parseIPATranscript(cluster)
 			if (ipa[0].basePhone == (Character) "s" && cluster.length() >= 3) {
-				//out.println "Found /s/ cluster"
+				this.out.println "Found /s/ cluster"
 				return [];
 			}
 		}
@@ -367,7 +373,7 @@ class EnglishSpeaker extends Speaker {
 		for (c2 in c2s ) {
 			for (c3 in c3s) {
 				if ( allowedClusters.contains(c2 + c3) ) {
-					//out.println "Looking at $c2 and $c3"
+					this.out.println "Looking at $c2 and $c3"
 					targets.add("s"+c2+c3)
 				}
 			}
@@ -377,12 +383,12 @@ class EnglishSpeaker extends Speaker {
 
 	private List PATTStepTwo() {
 		def targetPool = this.modelClusters.findAll{it.length() == 2}
-		//println "PATTStepTwo: targetPool: " + targetPool
+		this.out.println "PATTStepTwo: targetPool: " + targetPool
 		
 		/* Remove IN clusters */
-		//println "PATTStepTwo: Removing IN clusters..."
+		this.out.println "PATTStepTwo: Removing IN clusters..."
 		targetPool = targetPool - targetPool.intersect( this.clusters )
-		//println "PATTStepTwo: targetPool: " + targetPool
+		this.out.println "PATTStepTwo: targetPool: " + targetPool
 		
 		if (!targetPool) return null
 		
@@ -397,10 +403,10 @@ class EnglishSpeaker extends Speaker {
 		if (msd == null) msd = 10
 		//println "PATTStepTwo: msd: $msd"
 		def removables = targetPool.findAll{ this.getSonorityDistance(it) >= msd }
-		println "PATTStepTwo: removables: $removables"
+		this.out.println "PATTStepTwo: removables: $removables"
 		targetPool = targetPool - targetPool.intersect( removables )
-		println "PATTStepTwo: Removed clusters with msd >= $msd"
-		println "PATTStepTwo: targetPool: " + targetPool
+		this.out.println "PATTStepTwo: Removed clusters with msd >= $msd"
+		this.out.println "PATTStepTwo: targetPool: " + targetPool
 		
 		if (!targetPool) return null
 		
@@ -410,10 +416,10 @@ class EnglishSpeaker extends Speaker {
 		   Note: due to changes in sonority, SD=-2 is now SD=-4*/
 		removables = targetPool.findAll{ this.getSonorityDistance(it) == -4 || 
 		["pj", "bj", "fj", "vj", "mj"].contains(it) }
-		//println "PATTStepTwo: removables: $removables"
+		this.out.println "PATTStepTwo: removables: $removables"
 		targetPool = targetPool - targetPool.intersect( removables )
-		//println "PATTStepTwo: Removed /C/j clusters and SD=-2 clusters"
-		//println "PATTStepTwo: targetPool: " + targetPool
+		this.out.println "PATTStepTwo: Removed /C/j clusters and SD=-2 clusters"
+		this.out.println "PATTStepTwo: targetPool: " + targetPool
 		
 		if (!targetPool) return null
 			
@@ -434,12 +440,12 @@ class EnglishSpeaker extends Speaker {
 		if (removables) {
 			/* This is where the potential 2-element clusters can be added
 			to the CSV file */
-			//println "PATTStepTwo: Consider " + removables.join(",")
-			//csv.writeNext("Potential Cluster Targets after Step Two: ")
-			//csv.writeNext(removables as String[])
+			this.out.println "PATTStepTwo: Consider " + removables.join(",")
+			this.csv.writeNext("Potential Cluster Targets after Step Two: ")
+			this.csv.writeNext(removables as String[])
 		}
-		//println "PATTStepTwo: Removed sw, sl, sm, sn for now"
-		//println "PATTStepTwo: targetPool: " + targetPool
+		this.out.println "PATTStepTwo: Removed sw, sl, sm, sn for now"
+		this.out.println "PATTStepTwo: targetPool: " + targetPool
 		
 		if (!targetPool) return null
 			
@@ -449,8 +455,8 @@ class EnglishSpeaker extends Speaker {
 		msd = this.getMinSonorityDistance(targetPool)
 		removables = targetPool.findAll{ this.getSonorityDistance(it) > msd }
 		targetPool = targetPool - targetPool.intersect( removables )
-		//println "PATTStepTwo: Removed all from target pool >= $msd"
-		//println "PATTStepTwo: targetPool: " + targetPool
+		this.out.println "PATTStepTwo: Removed all from target pool >= $msd"
+		this.out.println "PATTStepTwo: targetPool: " + targetPool
 		def targets = []
 		for (cluster in targetPool) {
 			for (phone in cluster)
@@ -869,9 +875,25 @@ sessions.each { sessionLoc ->
 	records += session.records
 }
 
-eng = new EnglishSpeaker(records, getBinding().out, csv)
-eng.writeCSV(eng.phoneticInv)
-eng.writeCSV(eng.phonemicInv)
-eng.writeCSV(eng.clusterInv)
-eng.PATT()
+speaker = new EnglishSpeaker(records, getBinding().out, csv)
+println " ";
+println "Phonological Assessment and Treatment Target Selection (PATT)"
+println "*************************************************************"
+speaker.writeCSV(speaker.phoneticInv)
+speaker.writeCSV(speaker.phonemicInv)
+speaker.writeCSV(speaker.clusterInv)
+speaker.PATT()
+println "*************************************************************"
+println "TREATMENT TARGETS: " + speaker.treatmentTargets
+println "Phones to monitor: " + speaker.outPhones
+csv.writeNext("Phones to monitor:")
+csv.writeNext(speaker.outPhones as String[] )
+println "Phonemes to monitor: " + speaker.outPhonemes
+csv.writeNext("Phonemes to monitor:")
+csv.writeNext(speaker.outPhonemes as String[])
+println "Clusters to monitor: " + speaker.outClusters
+csv.writeNext("Clusters to monitor:")
+csv.writeNext(speaker.outClusters as String[])
+
+println "Please see output in " + fileChooser.getSelectedFile().getAbsolutePath()
 csv.close()
