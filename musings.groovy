@@ -209,7 +209,7 @@ interface Language {
 	List getModelPhones()
 	List getModelClusters()
 	Map getSonorityValues()
-	List getTreatmentTargets()
+	List PATT()
 }
 
 abstract class Speaker implements Language {
@@ -218,15 +218,16 @@ a client's phonetic, phonemic, and cluster inventories; the steps for
 determining treatment target selection; the inventory "rules" for the specific
 language, e.g. allowable phones in English, allowable clusters in Spanish, etc.,
 and an interface to output this information. */
-	CSVWriter csv
-    PhoneticInventory phoneticInv
-  	PhonemicInventory phonemicInv
-  	ClusterInventory clusterInv
+	private CSVWriter csv
+    public PhoneticInventory phoneticInv
+  	public PhonemicInventory phonemicInv
+  	public ClusterInventory clusterInv
+  	public List treatmentTargets
   	
   	public abstract List getModelPhones() 
   	public abstract List getModelClusters()
   	public abstract Map getSonorityValues()
-  	public abstract List getTreatmentTargets()
+  	public abstract List PATT()
   	
   	public Speaker(records, out, csv) {
   		this.phonemicInv = new PhonemicInventory(records, out)
@@ -311,8 +312,9 @@ class EnglishSpeaker extends Speaker {
 		return SAE_CLUSTERS
 	}
 	
-	public List getTreatmentTargets() { 
-		return ["under", "construction"]
+	public List PATT() { 
+		this.treatmentTargets = ["under", "construction"]
+		return this.treatmentTargets
 	}
 	
 	private List PATTStepOne() {
@@ -501,8 +503,9 @@ class SpanishSpeaker extends Speaker {
   		return ESP_LR_CLUSTERS
   	}
 	
-	public List getTreatmentTargets() {
-		return ["under", "construction"]
+	public List PATT() {
+		this.treatmentTargets = ["under", "construction"]
+		return this.treatmentTargets	
 	}
 }
 
