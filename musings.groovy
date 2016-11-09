@@ -328,8 +328,19 @@ class EnglishSpeaker extends Speaker {
 	}
 	
 	public List PATT() { 
-		this.treatmentTargets = ["under", "construction"]
-		return this.treatmentTargets
+		def methods = [ "Step One":this.&PATTStepOne, 
+		  "Step Two":this.&PATTStepTwo, "Step Three":this.&PATTStepThree ]
+		
+		for (pattStep in methods.keySet()) {
+			this.treatmentTargets = methods[pattStep]()
+			if (this.treatmentTargets) {
+				this.csv.writeNext("Targets after $pattStep: ")
+				this.csv.writeNext(this.treatmentTargets as String[])
+				return this.treatmentTargets
+			}
+		}
+		this.csv.writeNext("Error: no targets found!")
+		return null
 	}
 	
 	private List PATTStepOne() {
@@ -338,7 +349,7 @@ class EnglishSpeaker extends Speaker {
 		QUESTION: is this only any ENGLISH clusters, or ANY s/CC/? Assuming any
 		QUESTION: Any /s/? Or should it be any /s/ with no diacritics?
 		*/
-		targets = []
+		def targets = []
 		for (cluster in this.clusters ) {
 			IPATranscript ipa = IPATranscript.parseIPATranscript(cluster)
 			if (ipa[0].basePhone == (Character) "s" && cluster.length() >= 3) {
@@ -350,9 +361,9 @@ class EnglishSpeaker extends Speaker {
 		/* if "kw", "pr", "tr", "kr", or "pl" can be constructed from phonemes
 		in the phonemic inventory, prepend /s/ to it and return it as a target.
 		QUESTION: count base phones or not? */
-		allowedClusters = ["kw", "pɹ", "tɹ", "kɹ", "pl"]
-		c2s = this.phonemes.findAll{ ["p", "t", "k"].contains(it) }
-		c3s = this.phonemes.findAll{ ["w", "l", "ɹ"].contains(it) }
+		def allowedClusters = ["kw", "pɹ", "tɹ", "kɹ", "pl"]
+		def c2s = this.phonemes.findAll{ ["p", "t", "k"].contains(it) }
+		def c3s = this.phonemes.findAll{ ["w", "l", "ɹ"].contains(it) }
 		for (c2 in c2s ) {
 			for (c3 in c3s) {
 				if ( allowedClusters.contains(c2 + c3) ) {
@@ -365,7 +376,7 @@ class EnglishSpeaker extends Speaker {
 	}
 
 	private List PATTStepTwo() {
-		targetPool = this.modelClusters.findAll{it.length() == 2}
+		def targetPool = this.modelClusters.findAll{it.length() == 2}
 		//println "PATTStepTwo: targetPool: " + targetPool
 		
 		/* Remove IN clusters */
@@ -378,14 +389,14 @@ class EnglishSpeaker extends Speaker {
 		/* Get minimum sonority distance (MSD) and remove all clusters with MSD
 		greater than or equal to that sonority distance */
 		//println "Getting cluster inventory of 2"
-		clusters = this.clusters.findAll{ it.length() == 2 }
+		def clusters = this.clusters.findAll{ it.length() == 2 }
 		/* If there aren't any clusters in the inventory, set sonority distance to
 		a number beyond the max. This is a hack that needs to be fixed */
 		//println "Attempting function getMinSonorityDistance"
-		msd = this.getMinSonorityDistance(clusters)
+		def msd = this.getMinSonorityDistance(clusters)
 		if (msd == null) msd = 10
 		//println "PATTStepTwo: msd: $msd"
-		removables = targetPool.findAll{ this.getSonorityDistance(it) >= msd }
+		def removables = targetPool.findAll{ this.getSonorityDistance(it) >= msd }
 		println "PATTStepTwo: removables: $removables"
 		targetPool = targetPool - targetPool.intersect( removables )
 		println "PATTStepTwo: Removed clusters with msd >= $msd"
@@ -440,7 +451,7 @@ class EnglishSpeaker extends Speaker {
 		targetPool = targetPool - targetPool.intersect( removables )
 		//println "PATTStepTwo: Removed all from target pool >= $msd"
 		//println "PATTStepTwo: targetPool: " + targetPool
-		targets = []
+		def targets = []
 		for (cluster in targetPool) {
 			for (phone in cluster)
 			  if (this.outPhones.contains(phone)) {
@@ -452,14 +463,14 @@ class EnglishSpeaker extends Speaker {
 	}	
 
 	private List PATTStepThree() {
-		targetPool = this.outPhones
+		def targetPool = this.outPhones
 		
 		/* First, remove all stimulable sounds: since we haven't implemented 
 		stimulable sounds yet, skipping this...*/
 		
 		/* Cross out early acquired sounds. For english this is [p, b, t, d, k, g,
 		f, v, m, n, ŋ, w, j, h] */
-		earlySounds = ["p", "b", "t", "d", "k", "ɡ", "f", "v", "m", "n", "ŋ", "w",
+		def earlySounds = ["p", "b", "t", "d", "k", "ɡ", "f", "v", "m", "n", "ŋ", "w",
 					   "j", "h"]
 		targetPool = targetPool - targetPool.intersect( earlySounds )
 		
@@ -471,8 +482,8 @@ class EnglishSpeaker extends Speaker {
 		/* From the list of common sounds sorted from most to least, pick the first
 		one we see from the targetPool 
 		NOTE: need to change from hard coding to account for other languages */
-		commonSounds = ["ɹ", "l", "s", "z", "ð", "θ", "ʃ", "ʤ", "ʧ", "ʒ"]
-		targets = []
+		def commonSounds = ["ɹ", "l", "s", "z", "ð", "θ", "ʃ", "ʤ", "ʧ", "ʒ"]
+		def targets = []
 		for (sound in commonSounds)
 			if (targetPool.contains(sound)) targets.add(sound)
 		
@@ -858,8 +869,9 @@ sessions.each { sessionLoc ->
 	records += session.records
 }
 
-eng = new SpanishSpeaker(records, getBinding().out, csv)
+eng = new EnglishSpeaker(records, getBinding().out, csv)
 eng.writeCSV(eng.phoneticInv)
 eng.writeCSV(eng.phonemicInv)
 eng.writeCSV(eng.clusterInv)
+eng.PATT()
 csv.close()
