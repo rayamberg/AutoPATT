@@ -218,7 +218,8 @@ a client's phonetic, phonemic, and cluster inventories; the steps for
 determining treatment target selection; the inventory "rules" for the specific
 language, e.g. allowable phones in English, allowable clusters in Spanish, etc.,
 and an interface to output this information. */
-	PhoneticInventory phoneticInv
+	CSVWriter csv
+    PhoneticInventory phoneticInv
   	PhonemicInventory phonemicInv
   	ClusterInventory clusterInv
   	
@@ -227,10 +228,11 @@ and an interface to output this information. */
   	public abstract Map getSonorityValues()
   	public abstract List getTreatmentTargets()
   	
-  	public Speaker(records, out) {
+  	public Speaker(records, out, csv) {
   		this.phonemicInv = new PhonemicInventory(records, out)
   		this.phoneticInv = this.phonemicInv.phoneticInv
   		this.clusterInv = new ClusterInventory(records, out)
+  		this.csv = csv
   	}
   	
   	public List getClusters() {
@@ -275,6 +277,10 @@ and an interface to output this information. */
 			//out.println "msd is $msd"
 		return msd
   	}
+  	
+  	public void writeCSV() {
+  		this.csv.writeNext("Hello World")
+  	}
 }
 
 class EnglishSpeaker extends Speaker {
@@ -289,8 +295,8 @@ class EnglishSpeaker extends Speaker {
   	  "spɹ", "stɹ", "skɹ", "spl" ]  	
 	
  	
-  	public EnglishSpeaker(records, out) {
-  		super(records, out)
+  	public EnglishSpeaker(records, out, csv) {
+  		super(records, out, csv)
   	}
   	
   	public Map getSonorityValues() {
@@ -500,6 +506,19 @@ class SpanishSpeaker extends Speaker {
 	}
 }
 
+/* Prepare CSV file */
+fileChooser = new JFileChooser()
+fileChooser.setDialogTitle("Please specify a CSV file to output data")
+fileChooser.setFileFilter(new FileNameExtensionFilter("CSV file", "csv"))
+userSelection = fileChooser.showSaveDialog()
+if (userSelection == JFileChooser.APPROVE_OPTION){
+	csv = new CSVWriter(new FileWriter(fileChooser.getSelectedFile().getAbsolutePath()))
+} else {
+	JOptionPane.showMessageDialog(null, "You must choose a valid file to output data",
+    "PATT", JOptionPane.WARNING_MESSAGE)
+    return
+}
+
 def project = window.project
 if (project == null) return
 
@@ -518,4 +537,6 @@ sessions.each { sessionLoc ->
 	records += session.records
 }
 
-eng = new EnglishSpeaker(records, getBinding().out)
+eng = new EnglishSpeaker(records, getBinding().out, csv)
+eng.writeCSV()
+csv.close()
