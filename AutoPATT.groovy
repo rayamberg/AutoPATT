@@ -653,17 +653,112 @@ class SpanishSpeaker extends Speaker {
 		return ESP_CLUSTERS
 	}
 	
-	public List getWJClusters() {
+	public List getModelWJClusters() {
   		return ESP_WJ_CLUSTERS
   	}
   	
-  	public List getLRClusters() {
+  	public List getModelLRClusters() {
   		return ESP_LR_CLUSTERS
   	}
 	
 	public List PATT() {
-		this.treatmentTargets = ["under", "construction"]
-		return this.treatmentTargets	
+		def methods = [ "Step One":this.&PATTStepOne, 
+		  "Step Two":this.&PATTStepTwo ]
+		
+		for (pattStep in methods.keySet()) {
+			this.treatmentTargets = methods[pattStep]()
+			if (this.treatmentTargets) {
+				this.out.println("Treatment targets found after $pattStep")
+				this.csv.writeNext("TARGETS AFTER $pattStep: ")
+				this.csv.writeNext(this.treatmentTargets as String[])
+				return this.treatmentTargets
+			} else {
+				this.out.println("No treatment targets found after $pattStep")
+				this.csv.writeNext("No treatment targets found after $pattStep") 
+			}
+		}
+		this.csv.writeNext("Error: no targets found!")
+		return null	
+	}
+	
+	private List PATTStepOne() {		
+		/* Algorithm: you'll have two separate cluster lists. One for C+/w,j/ 
+		clusters, and one for C+/l,r/ clusters. This might involve modifying the
+		cluster inventory for Spanish.*/
+		def WJClusters = this.clusters.intersect( this.modelWJClusters )
+		def LRClusters = this.clusters.intersect( this.modelLRClusters )
+		def WJTargetPool = this.modelWJClusters
+		def LRTargetPool = this.modelLRClusters
+		/* 1. cross out all IN clusters from both charts. If both empty go to 
+		Step 2. */
+		WJTargetPool = WJTargetPool - WJTargetPool.intersect(WJClusters)
+		LRTargetPool = LRTargetPool - LRTargetPool.intersect(LRClusters)
+		if (!(WJTargetPool || LRTargetPool)) return null
+		
+		/* 2. Get MSD for /w,j/ clusters. Cross out all clusters >= MSD.*/
+		if (WJTargetPool) {
+			this.out.println "PATTStepOne: Looking at C+/w,j/ clusters"
+			def msd = this.getMinSonorityDistance(WJClusters)
+			if (msd == null) msd = 10
+			def removables = WJTargetPool.findAll{ this.getSonorityDistance(it) >= msd }
+			WJTargetPool = WJTargetPool - WJTargetPool.intersect( removables )
+		}
+	   
+		/*3. Get MSD for /l,r/ clusters. Cross out all clusers >= MSD. */
+		if (LRTargetPool) {
+			this.out.println "PATTStepOne: Looking at C+/l,ɾ/ clusters"
+			def msd = this.getMinSonorityDistance(LRClusters)
+			if (msd == null) msd = 10
+			def removables = LRTargetPool.findAll{ this.getSonorityDistance(it) >= msd }
+			LRTargetPool = LRTargetPool - LRTargetPool.intersect( removables )
+		}
+		
+		/* 4. If pool empty, go to Step 2. */
+		if (!(WJTargetPool || LRTargetPool)) return null
+		
+		/*5. Choose clusters with smallest sonority distance. If more than one is 
+		chosen, select one that includes OUT phones. If there are more than one,
+		consider selecting one of each type from /w,j/ and /l,r/. Those will be 
+		your treatment targets. Return targets */
+		def targets = []
+		//Get smallest sonority distance for C+/w,j/ targets and C+/l,r/ targets
+		//separately and add them to targets list.
+		msd = this.getMinSonorityDistance(WJTargetPool)
+		WJTargets = WJTargetPool.findAll{ this.getSonorityDistance(it) == msd }
+		msd = this.getMinSonorityDistance(LRTargetPool)
+		LRTargets = LRTargetPool.findAll{ this.getSonorityDistance(it) == msd }
+		targets = WJTargets + LRTargets
+		
+		return targets
+		
+	}
+	
+	private List PATTStepTwo() {
+		/* Algorithm:
+		1. Get all out phones.
+		2. Cross out all stimulable sounds
+		3. Cross out early acquired sounds [p t k m n ñ l j x]
+		4. Circle those with greatest complexity.
+		5. If multiple sounds, select one that occurs most frequently.
+		In Spanish this is [s l n t edh r t m B velar f z j r x tS ng] 
+		6. Return singleton target */
+		def targetPool = this.outPhones
+		
+		/* Cross out early acquired sounds. For Spanish this is [p, t, k, m, n, 
+		ñ, l, j, x] */
+		def earlySounds = ["p", "t", "k", "m", "n", "ñ", "l", "j", "x"]
+		targetPool = targetPool - targetPool.intersect( earlySounds )
+		
+		/* From the list of common sounds sorted from most to least, pick the first
+		one we see from the targetPool 
+		NOTE: need to change from hard coding to account for other languages */
+		def commonSounds = ["s", "l", "n", "t", "ð", "ɾ", "m", "p", "β", "ɣ", "f", "z",
+						"j", "r", "x", "ʧ", "ɳ"]
+		def targets = []
+		for (sound in commonSounds)
+			if (targetPool.contains(sound)) targets.add(sound)
+		
+		return targets
 	}
 	
 	public void writeCSV(PhonemicInventory phonemicInv) {
