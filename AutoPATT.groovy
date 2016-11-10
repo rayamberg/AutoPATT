@@ -746,14 +746,14 @@ class SpanishSpeaker extends Speaker {
 		
 		/* Cross out early acquired sounds. For Spanish this is [p, t, k, m, n, 
 		ñ, l, j, x] */
-		def earlySounds = ["p", "t", "k", "m", "n", "ñ", "l", "j", "x"]
+		def earlySounds = ["p", "t", "k", "m", "n", "ɲ", "l", "j", "x"]
 		targetPool = targetPool - targetPool.intersect( earlySounds )
 		
 		/* From the list of common sounds sorted from most to least, pick the first
 		one we see from the targetPool 
 		NOTE: need to change from hard coding to account for other languages */
 		def commonSounds = ["s", "l", "n", "t", "ð", "ɾ", "m", "p", "β", "ɣ", "f", "z",
-						"j", "r", "x", "ʧ", "ɳ"]
+						"j", "r", "x", "ʧ", "ɲ"]
 		def targets = []
 		for (sound in commonSounds)
 			if (targetPool.contains(sound)) targets.add(sound)
