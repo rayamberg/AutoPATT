@@ -28,7 +28,6 @@ class PhoneticInventory {
 					//out.println "$it - " + ipaTokens.getTokenType( it.getBasePhone() )
 					if ( isConsonant(it) ) {
 						def phone = it.text
-						//def phone = it; //attempting to store the object, not string
 						/* Count occurrences of each phone */
 						def i = inventoryMap[phone]
 						inventoryMap[phone] = i ? ++i : 1
@@ -39,6 +38,7 @@ class PhoneticInventory {
 	}
 	
 	List getInventory() {
+	/* Collect all phones that occur more than once */
 		return inventoryMap.findAll{ it.value > 1 }.collect{ it.key }
 	}
 	
@@ -112,23 +112,15 @@ class PhonemicInventory {
 				    this.meanings[key.toString()] != this.meanings[pair.toString()] ) {
 						/* if the consonants don't match we should have a 
 						minimal pair with a consonant contrast here */
-						if ( p1.text != p2.text && !(doneContrast[i])) {
-						  
-						  //out.println "Comparing type " + key[i].getClass() + 
-						  //  " and type " + pair[i].getClass();
-					      
-					      /* QUESTION: Does it count if we compare
-					      against something NOT in the phonetic inventory? 
-                                                 ANSWER: YES 
-                             QUESTION: For contrasts in meaning, should
-                             we care about homonyms? */					      
-					      
+						if ( p1.text != p2.text && !(doneContrast[i])) {  
+						  /* out.println "Comparing type " + key[i].getClass() + 
+						    " and type " + pair[i].getClass(); */	      
 						  def count = this.inventoryMap[ p1.text ];
 						  this.inventoryMap[ p1.text ] = count ? ++count : 1;
 						  doneContrast[i] = 1;
 						  /*out.println "Non-match between $p1 and $p2, inventoryMap[$p1] = " +
 						    inventoryMap[p1.getText()];*/
-						  out.println "$key/$pair: Found contrast for $p1 and $p2"
+						  this.out.println "$key/$pair: Found contrast for $p1 and $p2"
 						  /*out.println "meanings[$key] = " + meanings[key.toString()] + 
 						    "; meanings[$pair] = " + meanings[pair.toString()]*/
 					    }
@@ -140,6 +132,7 @@ class PhonemicInventory {
 		
 	}
 
+	/* Modification of ghedlund's function with my additions noted */
 	IpaTernaryTree buildMinPairs() {
 		def wordKeys = minPairs.keySet()
 		
@@ -149,7 +142,8 @@ class PhonemicInventory {
 			wordKeys.each { key2 ->
 				if(key == key2) return
 				if(key.length() != key2.length()) return /* My addition -rsa */
-				if(meanings[key.toString()] == meanings[key2.toString()]) return /* Also mine -rsa */
+				/* My addition on line below -rsa */
+				if(meanings[key.toString()] == meanings[key2.toString()]) return 
 				if(key.getExtension(LevenshteinDistance).distance(key2) == 1) {
 					for (i in 0 .. key.length() - 1) {
 						def p1 = key[i]
@@ -179,7 +173,7 @@ class PhonemicInventory {
 
 class ClusterInventory { 
 	static private PhonexPattern pattern = 
-	  PhonexPattern.compile("^\\s<,1>(cluster=\\c\\c+)")
+	PhonexPattern.compile("^\\s<,1>(cluster=\\c\\c+)")
 	private Map inventoryMap = [:]
 	
 	ClusterInventory(records, out) {
@@ -288,7 +282,6 @@ and an interface to output this information. */
   	}
   	
   	public Integer getMinSonorityDistance(List clusters) {
-  		//out.println "Inside getMinSonorityDistance"
   		def msd = null
   		for (cluster in clusters) {
   			def distance = getSonorityDistance(cluster)
@@ -296,7 +289,6 @@ and an interface to output this information. */
   			if ( msd == null || distance < msd )
 				msd = distance
 		}
-			//out.println "msd is $msd"
 		return msd
   	}
 }
@@ -350,11 +342,6 @@ class EnglishSpeaker extends Speaker {
 	}
 	
 	private List PATTStepOne() {
-		//out.println "In PATTStepOne()"
-		/* if any s/CC/ clusters are in the inventory, return empty 
-		QUESTION: is this only any ENGLISH clusters, or ANY s/CC/? Assuming any
-		QUESTION: Any /s/? Or should it be any /s/ with no diacritics?
-		*/
 		def targets = []
 		for (cluster in this.clusters ) {
 			IPATranscript ipa = IPATranscript.parseIPATranscript(cluster)
@@ -394,14 +381,12 @@ class EnglishSpeaker extends Speaker {
 		
 		/* Get minimum sonority distance (MSD) and remove all clusters with MSD
 		greater than or equal to that sonority distance */
-		//println "Getting cluster inventory of 2"
 		def clusters = this.clusters.findAll{ it.length() == 2 }
 		/* If there aren't any clusters in the inventory, set sonority distance to
 		a number beyond the max. This is a hack that needs to be fixed */
-		//println "Attempting function getMinSonorityDistance"
 		def msd = this.getMinSonorityDistance(clusters)
 		if (msd == null) msd = 10
-		//println "PATTStepTwo: msd: $msd"
+		this.out.println "PATTStepTwo: msd: $msd"
 		def removables = targetPool.findAll{ this.getSonorityDistance(it) >= msd }
 		this.out.println "PATTStepTwo: removables: $removables"
 		targetPool = targetPool - targetPool.intersect( removables )
@@ -411,8 +396,6 @@ class EnglishSpeaker extends Speaker {
 		if (!targetPool) return null
 		
 		/* Remove clusters with SD=-2 and /C/j clusters 
-		   Note: if you're working with non-english, the /C/j clusters should
-		   not be hard coded
 		   Note: due to changes in sonority, SD=-2 is now SD=-4*/
 		removables = targetPool.findAll{ this.getSonorityDistance(it) == -4 || 
 		["pj", "bj", "fj", "vj", "mj"].contains(it) }
@@ -423,18 +406,11 @@ class EnglishSpeaker extends Speaker {
 		
 		if (!targetPool) return null
 			
-		/* If the pool contains /sw, sl, sm, or sn/ determine the error pattern in 
-	these clusters, e.g. /sn/->/s/ or /sn/->n. If error patterns are similar to
-	/sp, st, sk/, remove the clusters. If they are different, keep them in pool. If
-	it is unclear, remove the clusters
-	NOTE: A MORE CLEAR ALGORITHM IS NECESSARY HERE. TALK TO DR. BARLOW 
-	NOTE: This will involve comparing orthography or IPA Target to IPA Actual
-	QUESTION: What if they're similar to other s clusters, but not similar to non-s
-	clusters? How should we deal with non-s clusters 
-	NOTE: For now, I'm just going to remove the clusters. 
-	PHIL: Maybe separate these clusters for now, and print them out separately
-	as "here are your potential 2-element 's' clusters */
-		//clusters = clusterInv.inventory.findAll{ ["sw", "sl", "sm", "sn"].contains(it) }
+		/* If the pool contains /sw, sl, sm, or sn/ determine the error pattern
+  in these clusters, e.g. /sn/->/s/ or /sn/->n. If error patterns are similar to
+  /sp, st, sk/, remove the clusters. If they are different, keep them in pool. 
+  If it is unclear, remove the clusters. Right now we are just outputting what
+  the potential 2-element 's' clusters are */
 		removables = targetPool.findAll{ ["sw", "sl", "sm", "sn"].contains(it) }
 		targetPool = targetPool - targetPool.intersect( removables )
 		if (removables) {
@@ -480,11 +456,6 @@ class EnglishSpeaker extends Speaker {
 					   "j", "h"]
 		targetPool = targetPool - targetPool.intersect( earlySounds )
 		
-		/* Choose sounds that will lead to the most system-wide change. 
-		NOTE: THIS ALGORITHM NEEDS TO BE MADE MORE CLEAR. CHECK WITH DR. BARLOW. For
-		example, if we see an affricate, do we ignore everything else? Do we pick
-		all sounds that trump another sound? Skipping this step for now */
-		
 		/* From the list of common sounds sorted from most to least, pick the first
 		one we see from the targetPool 
 		NOTE: need to change from hard coding to account for other languages */
@@ -497,7 +468,7 @@ class EnglishSpeaker extends Speaker {
 	}
 
 	public void writeCSV(PhoneticInventory phoneticInv) {
-		/* Algorithm something like this: 
+		/* Algorithm: 
 		1) Have pre-created 8x22 IPA list of consonants, all values set to false
 		and pre-created map which will store key:values of all variants of the 
 		basePhone, e.g. basePhoneMap["t":["tʷ","t","t̪"]]
@@ -540,7 +511,6 @@ class EnglishSpeaker extends Speaker {
 		  	  for (String item : row) {
 		  	  	  if ( !(ipa[0] instanceof CompoundPhone) && 
 		  	  	  (Character) item == ipa[0].basePhone) {
-		  	  	  	  //out.println "Found a match"
 		  	  	  	  if (basePhoneMap[item])
 		  	  	  	  	  basePhoneMap[item].add(ipa[0])
 		  	  	  	  else 
@@ -560,10 +530,8 @@ class EnglishSpeaker extends Speaker {
 			csvRow.add(mannerHeaders[i])
 			row.each  {
 				if (basePhoneMap[it]) {
-					//out.printf basePhoneMap[it].join(",") + " \r"
 					csvRow.add(basePhoneMap[it].join(","))
 				} else {
-					//out.printf " "
 					csvRow.add(" ")
 				}
 			}
@@ -582,7 +550,6 @@ class EnglishSpeaker extends Speaker {
 			if(pairs.size() > 0) {
 				pairs.offerFirst(key)
 				this.csv.writeNext(pairs as String[])
-				//csv.writeNext("$key:$pairs")
 			}
 		}
 		this.csv.writeNext("")
@@ -618,7 +585,6 @@ class EnglishSpeaker extends Speaker {
 		  for (List row : basePhones) {
 		  	  for (String item : row) {
 		  	  	  if ((Character) item == ipa[0].basePhone) {
-		  	  	  	  //out.println "Found a match"
 		  	  	  	  if (basePhoneMap[item])
 		  	  	  	  	  basePhoneMap[item].add(ipa[0])
 		  	  	  	  else 
@@ -638,10 +604,8 @@ class EnglishSpeaker extends Speaker {
 			csvRow.add(mannerHeaders[i])
 			row.each  {
 				if (basePhoneMap[it]) {
-					//out.printf basePhoneMap[it].join(",") + " \r"
 					csvRow.add(basePhoneMap[it].join(","))
 				} else {
-					//out.printf " "
 					csvRow.add(" ")
 				}
 			}
@@ -708,7 +672,6 @@ class SpanishSpeaker extends Speaker {
 			if(pairs.size() > 0) {
 				pairs.offerFirst(key)
 				this.csv.writeNext(pairs as String[])
-				//csv.writeNext("$key:$pairs")
 			}
 		}
 		this.csv.writeNext("")
@@ -744,7 +707,6 @@ class SpanishSpeaker extends Speaker {
 		  for (List row : basePhones) {
 		  	  for (String item : row) {
 		  	  	  if ((Character) item == ipa[0].basePhone) {
-		  	  	  	  //out.println "Found a match"
 		  	  	  	  if (basePhoneMap[item])
 		  	  	  	  	  basePhoneMap[item].add(ipa[0])
 		  	  	  	  else 
@@ -764,10 +726,8 @@ class SpanishSpeaker extends Speaker {
 			csvRow.add(mannerHeaders[i])
 			row.each  {
 				if (basePhoneMap[it]) {
-					//out.printf basePhoneMap[it].join(",") + " \r"
 					csvRow.add(basePhoneMap[it].join(","))
 				} else {
-					//out.printf " "
 					csvRow.add(" ")
 				}
 			}
@@ -810,7 +770,6 @@ class SpanishSpeaker extends Speaker {
 		  	  for (String item : row) {
 		  	  	  if ( !(ipa[0] instanceof CompoundPhone) && 
 		  	  	  (Character) item == ipa[0].basePhone) {
-		  	  	  	  //out.println "Found a match"
 		  	  	  	  if (basePhoneMap[item])
 		  	  	  	  	  basePhoneMap[item].add(ipa[0])
 		  	  	  	  else 
@@ -830,10 +789,8 @@ class SpanishSpeaker extends Speaker {
 			csvRow.add(mannerHeaders[i])
 			row.each  {
 				if (basePhoneMap[it]) {
-					//out.printf basePhoneMap[it].join(",") + " \r"
 					csvRow.add(basePhoneMap[it].join(","))
 				} else {
-					//out.printf " "
 					csvRow.add(" ")
 				}
 			}
