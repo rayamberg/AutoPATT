@@ -354,7 +354,7 @@ class EnglishSpeaker extends Speaker {
 			this.treatmentTargets = methods[pattStep]()
 			if (this.treatmentTargets) {
 				this.out.println("Treatment targets found after $pattStep")
-				this.csv.writeNext("Targets after $pattStep: ")
+				this.csv.writeNext("TARGETS AFTER $pattStep: ")
 				this.csv.writeNext(this.treatmentTargets as String[])
 				return this.treatmentTargets
 			} else {
@@ -612,6 +612,31 @@ class SpanishSpeaker extends Speaker {
   	private static final ESP_LR_CLUSTERS = [ "pɾ", "tɾ", "kɾ", "pl", "kl", "bɾ",
   	"dɾ", "ɡɾ", "bl", "ɡl", "fɾ", "fl" ]	
   	
+  	private static final ESP_BASEPHONES = [
+		["p","b",null,null,null,null,"t","d",null,null,"ʈ","ɖ","c","ɟ","k","ɡ",
+		"q","ɢ",null,null,"ʔ","ʡ"],
+		[null,"m",null,"ɱ",null,null,null,"n",null,null,null,"ɳ",null,"ɲ",null,
+		"ŋ",null,"ɴ"],
+		["ɸ",null,"f","v","θ",null,"s","z","ʃ","ʒ","ʂ","ʐ","ç","ʝ","x","ɣ","χ",
+		"ʁ","ħ","ʕ","h","ɦ"],
+		[null,null,null,null,null,null,"ɬ","ɮ",null,null,"ɕ","ʑ",null,null,
+		"ɧ",null,null,null,null,null,"ʜ","ʢ"],
+		[null,null,null,null,null,null,"ʦ","ʣ","ʧ","ʤ","ʨ","ʥ","ƛ","λ"],
+		["w","β","ʙ","ⱱ",null,"ð","ɺ","l","ɹ","ɽ","ɻ",null,null,
+		null,null,null,"ʀ"],
+		[null,null,null,null,null,null,"ɾ","r",null,"ɫ",null,"ɭ",null,"ʎ",
+		null,"ʟ"],
+		["ʍ",null,null,"ʋ",null,null,null,null,null,"ɥ",null,null,null,
+		"j",null,"ɰ"]
+	]
+		
+	private static final ESP_PLACE_HEADERS = ["", "bilabial", "", "labiodental", "", "dental", "", 
+		"alveolar", "", "palatoalveolar", "", "retroflex", "", "palatal", "", 
+		"velar", "", "uvular", "", "pharyngeal", "", "glottal", ""]
+	
+	private static final ESP_MANNER_HEADERS = ["plosive", "nasal", "fricative", "other fricative",
+		"affricate", "approximant", "rhotic", "glide"]
+  	
   	public SpanishSpeaker(records, out, csv) {
   		super(records, out, csv)
   	}
@@ -654,35 +679,12 @@ class SpanishSpeaker extends Speaker {
 		}
 		this.csv.writeNext("")
 		
-		def basePhones = [
-		["p","b",null,null,null,null,"t","d",null,null,"ʈ","ɖ","c","ɟ","k","ɡ",
-		"q","ɢ",null,null,"ʔ","ʡ"],
-		[null,"m",null,"ɱ",null,null,null,"n",null,null,null,"ɳ",null,"ɲ",null,
-		"ŋ",null,"ɴ"],
-		["ɸ","β","f","v","θ","ð","s","z","ʃ","ʒ","ʂ","ʐ","ç","ʝ","x","ɣ","χ",
-		"ʁ","ħ","ʕ","h","ɦ"],
-		[null,null,null,null,null,null,"ɬ","ɮ",null,null,"ɕ","ʑ",null,null,
-		"ɧ",null,null,null,null,null,"ʜ","ʢ"],
-		[null,null,null,null,null,null,"ʦ","ʣ","ʧ","ʤ","ʨ","ʥ","ƛ","λ"],
-		[null,null,"ʙ","ⱱ",null,null,"ɾ","r",null,"ɹ","ɽ","ɻ",null,null,
-		null,null,null,"ʀ"],
-		[null,null,null,null,null,null,"ɺ","l",null,"ɫ",null,"ɭ",null,"ʎ",
-		null,"ʟ"],
-		["ʍ","w",null,"ʋ",null,null,null,null,null,"ɥ",null,null,null,
-		"j",null,"ɰ"]
-		]
-		def placeHeaders = ["", "bilabial", "", "labiodental", "", "interdental", "", 
-		"alveolar", "", "palatoalveolar", "", "retroflex", "", "palatal", "", 
-		"velar", "", "uvular", "", "pharyngeal", "", "glottal", ""]
-		def mannerHeaders = ["plosive", "nasal", "fricative", "other fricative",
-		"affricate", "approximant", "lateral", "glide"]
-		
 		def basePhoneMap = [:]
 		
 		phonemicInv.inventory.each { phone ->
 		  IPATranscript ipa = IPATranscript.parseIPATranscript(phone)
 		  mainLoop:
-		  for (List row : basePhones) {
+		  for (List row : this.ESP_BASEPHONES) {
 		  	  for (String item : row) {
 		  	  	  if ((Character) item == ipa[0].basePhone) {
 		  	  	  	  if (basePhoneMap[item])
@@ -697,11 +699,11 @@ class SpanishSpeaker extends Speaker {
 		}
 		
 		this.csv.writeNext("PHONEMIC INVENTORY:")
-		this.csv.writeNext(placeHeaders as String[])
+		this.csv.writeNext(this.ESP_PLACE_HEADERS as String[])
 		def csvRow = []
 		
-		basePhones.eachWithIndex { row, i ->
-			csvRow.add(mannerHeaders[i])
+		this.ESP_BASEPHONES.eachWithIndex { row, i ->
+			csvRow.add(this.ESP_MANNER_HEADERS[i])
 			row.each  {
 				if (basePhoneMap[it]) {
 					csvRow.add(basePhoneMap[it].join(","))
@@ -716,35 +718,12 @@ class SpanishSpeaker extends Speaker {
 	}
 	
 	public void writeCSV(PhoneticInventory phoneticInv) {
-		def basePhones = [
-		["p","b",null,null,null,null,"t","d",null,null,"ʈ","ɖ","c","ɟ","k","ɡ",
-		"q","ɢ",null,null,"ʔ","ʡ"],
-		[null,"m",null,"ɱ",null,null,null,"n",null,null,null,"ɳ",null,"ɲ",null,
-		"ŋ",null,"ɴ"],
-		["ɸ","β","f","v","θ","ð","s","z","ʃ","ʒ","ʂ","ʐ","ç","ʝ","x","ɣ","χ",
-		"ʁ","ħ","ʕ","h","ɦ"],
-		[null,null,null,null,null,null,"ɬ","ɮ",null,null,"ɕ","ʑ",null,null,
-		"ɧ",null,null,null,null,null,"ʜ","ʢ"],
-		[null,null,null,null,null,null,"ʦ","ʣ","ʧ","ʤ","ʨ","ʥ","ƛ","λ"],
-		[null,null,"ʙ","ⱱ",null,null,"ɾ","r",null,"ɹ","ɽ","ɻ",null,null,
-		null,null,null,"ʀ"],
-		[null,null,null,null,null,null,"ɺ","l",null,"ɫ",null,"ɭ",null,"ʎ",
-		null,"ʟ"],
-		["ʍ","w",null,"ʋ",null,null,null,null,null,"ɥ",null,null,null,
-		"j",null,"ɰ"]
-		]
-		def placeHeaders = ["", "bilabial", "", "labiodental", "", "interdental", "", 
-		"alveolar", "", "palatoalveolar", "", "retroflex", "", "palatal", "", 
-		"velar", "", "uvular", "", "pharyngeal", "", "glottal", ""]
-		def mannerHeaders = ["plosive", "nasal", "fricative", "other fricative",
-		"affricate", "approximant", "lateral", "glide"]
-	
 		def basePhoneMap = [:]
 		
 		phoneticInv.inventory.each { phone ->
 		  IPATranscript ipa = IPATranscript.parseIPATranscript(phone)
 		  mainLoop:
-		  for (List row : basePhones) {
+		  for (List row : this.ESP_BASEPHONES) {
 		  	  for (String item : row) {
 		  	  	  if ( !(ipa[0] instanceof CompoundPhone) && 
 		  	  	  (Character) item == ipa[0].basePhone) {
@@ -760,11 +739,11 @@ class SpanishSpeaker extends Speaker {
 		}
 		
 		this.csv.writeNext("PHONETIC INVENTORY:")
-		this.csv.writeNext(placeHeaders as String[])
+		this.csv.writeNext(this.ESP_PLACE_HEADERS as String[])
 		def csvRow = []
 		
-		basePhones.eachWithIndex { row, i ->
-			csvRow.add(mannerHeaders[i])
+		this.ESP_BASEPHONES.eachWithIndex { row, i ->
+			csvRow.add(this.ESP_MANNER_HEADERS[i])
 			row.each  {
 				if (basePhoneMap[it]) {
 					csvRow.add(basePhoneMap[it].join(","))
