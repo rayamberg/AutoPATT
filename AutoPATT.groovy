@@ -60,7 +60,7 @@ class PhonemicInventory {
 	private PhoneticInventory phoneticInv
 	private IpaTernaryTree minPairs
 
-	PhonemicInventory(records, out) {
+	PhonemicInventory(records) {
 		this.inventoryMap = [:]
 		this.meanings = [:]
 		this.phoneticInv = new PhoneticInventory(records)
@@ -74,7 +74,7 @@ class PhonemicInventory {
 				def words = tier.toString().tokenize()
 				/* If there are more orthos than productions...*/
 				if (words.count{it} != record.IPAActual[index].words().count{it})
-					out.println "Orthography <-> IPA Actual Count Mismatch!"
+					//out.println "Orthography <-> IPA Actual Count Mismatch!"
 				
 				record.IPAActual[index].words().findAll{it.contains("\\w")}.eachWithIndex { utt, i ->
 					//every word in the word tree gets an empty hash set.
@@ -176,7 +176,7 @@ class ClusterInventory {
 	PhonexPattern.compile("^\\s<,1>(cluster=\\c\\c+)")
 	private Map inventoryMap = [:]
 	
-	ClusterInventory(records, out) {
+	ClusterInventory(records) {
 		records.each { record->
 			record.IPAActual.each { transcript ->
 				/* find two- and three- element word-initial clusters */
@@ -244,9 +244,9 @@ and an interface to output this information. */
 	abstract public void writeCSV(PhoneticInventory phoneticInv)
   	
   	public Speaker(records, out, csv) {
-  		this.phonemicInv = new PhonemicInventory(records, out)
+  		this.phonemicInv = new PhonemicInventory(records)
   		this.phoneticInv = this.phonemicInv.phoneticInv
-  		this.clusterInv = new ClusterInventory(records, out)
+  		this.clusterInv = new ClusterInventory(records)
   		this.csv = csv
   		this.out = out
   	}
