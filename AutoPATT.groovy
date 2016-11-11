@@ -24,8 +24,6 @@ class PhoneticInventory {
 		records.each{ record ->
 			record.IPAActual.each { transcript ->
 				transcript.findAll { it instanceof Phone}.each {
-					/* For a compound tesh, getBasePhone() outputted an 'x' */
-					//out.println "$it - " + ipaTokens.getTokenType( it.getBasePhone() )
 					if ( isConsonant(it) ) {
 						def phone = it.text
 						/* Count occurrences of each phone */
@@ -110,8 +108,9 @@ class PhonemicInventory {
 					PhoneticInventory.isConsonant(p2) && 
 				    this.phoneticInv.inventory.contains(p1.text) &&
 				    this.meanings[key.toString()] != this.meanings[pair.toString()] ) {
-						/* if the consonants don't match we should have a 
-						minimal pair with a consonant contrast here */
+						/* if the consonants don't match and rule 4 is satisfied
+						we should have a minimal pair with a consonant contrast
+						here */
 						if ( p1.text != p2.text && !(doneContrast[i])) {  
 						  /* out.println "Comparing type " + key[i].getClass() + 
 						    " and type " + pair[i].getClass(); */	      
@@ -199,6 +198,10 @@ class ClusterInventory {
 	}	
 }
 
+/* modelPhones refers to the list of phones in a given language, such as
+Spanish. modelClusters is the same for clusters. sonorityValues returns a
+mapping with all phones mapped to their sonority values in that language. 
+PATT() does the PATT analysis and returns treatment targets */
 interface Language {
 	List getModelPhones()
 	List getModelClusters()
@@ -206,6 +209,8 @@ interface Language {
 	List PATT()
 }
 
+/* Since the tables display are language dependent, these functions should
+be overwritten depending on the Speaker class implementing */
 interface CSVWrite {
 	void writeCSV(ClusterInventory clusterInv)
 	void writeCSV(PhonemicInventory phonemicInv)
@@ -213,7 +218,7 @@ interface CSVWrite {
 }
 
 abstract class Speaker implements Language, CSVWrite {
-/* Should contain all important data structures for analyzing
+/* The "main" class. Should contain all important data structures for analyzing
 a client's phonetic, phonemic, and cluster inventories; the steps for 
 determining treatment target selection; the inventory "rules" for the specific
 language, e.g. allowable phones in English, allowable clusters in Spanish, etc.,
@@ -322,13 +327,13 @@ class EnglishSpeaker extends Speaker {
 		"j",null,"ɰ"]
 		]
 		
-	private static final SAE_PLACE_HEADERS = ["", "bilabial", "", "labiodental", "", "interdental", "", 
-		"alveolar", "", "palatoalveolar", "", "retroflex", "", "palatal", "", 
-		"velar", "", "uvular", "", "pharyngeal", "", "glottal", ""]
+	private static final SAE_PLACE_HEADERS = ["", "bilabial", "", "labiodental",
+	"", "interdental", "", "alveolar", "", "palatoalveolar", "", "retroflex", 
+	"", "palatal", "", "velar", "", "uvular", "", "pharyngeal", "", "glottal", 
+	""]
 	
-	private static final SAE_MANNER_HEADERS = ["plosive", "nasal", "fricative", "other fricative",
-		"affricate", "approximant", "lateral", "glide"]
-  	  
+	private static final SAE_MANNER_HEADERS = ["plosive", "nasal", "fricative", 
+	"other fricative", "affricate", "approximant", "lateral", "glide"]  
   	
   	public EnglishSpeaker(records, out, csv) {
   		super(records, out, csv)
@@ -346,11 +351,14 @@ class EnglishSpeaker extends Speaker {
 		return SAE_CLUSTERS
 	}
 	
-	public List PATT() { 
+	public List PATT() {
+		/* Since PATT steps will be conditionally executed, make them closures
+		and put them in a loop */
 		def methods = [ "Step One":this.&PATTStepOne, 
 		  "Step Two":this.&PATTStepTwo, "Step Three":this.&PATTStepThree ]
 		
 		for (pattStep in methods.keySet()) {
+			/* Execute the method as a closure */
 			this.treatmentTargets = methods[pattStep]()
 			if (this.treatmentTargets) {
 				this.out.println("Treatment targets found after $pattStep")
@@ -435,7 +443,8 @@ class EnglishSpeaker extends Speaker {
   in these clusters, e.g. /sn/->/s/ or /sn/->n. If error patterns are similar to
   /sp, st, sk/, remove the clusters. If they are different, keep them in pool. 
   If it is unclear, remove the clusters. Right now we are just outputting what
-  the potential 2-element 's' clusters are */
+  the potential 2-element 's' clusters are, so this remains to be implemented. 
+  */
 		removables = targetPool.findAll{ ["sw", "sl", "sm", "sn"].contains(it) }
 		targetPool = targetPool - targetPool.intersect( removables )
 		if (removables) {
@@ -471,7 +480,6 @@ class EnglishSpeaker extends Speaker {
 
 	private List PATTStepThree() {
 		def targetPool = this.outPhones
-		
 		/* First, remove all stimulable sounds: since we haven't implemented 
 		stimulable sounds yet, skipping this...*/
 		
