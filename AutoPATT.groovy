@@ -861,6 +861,9 @@ class SpanishSpeaker extends Speaker {
 	}
 }
 
+def project = window.project
+if (project == null) return
+
 /* Prepare CSV file */
 fileChooser = new JFileChooser()
 fileChooser.setDialogTitle("Please specify a CSV file to output data")
@@ -874,9 +877,7 @@ if (userSelection == JFileChooser.APPROVE_OPTION){
     return
 }
 
-def project = window.project
-if (project == null) return
-
+	
 def sessionSelector = new SessionSelector(project)
 def scroller = new JScrollPane(sessionSelector)
 JOptionPane.showMessageDialog(window, scroller)
@@ -892,7 +893,16 @@ sessions.each { sessionLoc ->
 	records += session.records
 }
 
-speaker = new EnglishSpeaker(records, getBinding().out, csv)
+/* Allow user to choose language to analyze */
+def langComboMap = [ "English":EnglishSpeaker, "Spanish":SpanishSpeaker]
+userSelection = JOptionPane.showInputDialog(
+  null, "Choose client's language to analyze:", "Choose Language", 
+  JOptionPane.PLAIN_MESSAGE, null, langComboMap.keySet() as Object[],
+  "English")
+if (!userSelection) return
+else speaker = langComboMap[userSelection].newInstance(records,
+  getBinding().out, csv)
+
 println " ";
 println "Phonological Assessment and Treatment Target Selection (PATT)"
 println "*************************************************************"
