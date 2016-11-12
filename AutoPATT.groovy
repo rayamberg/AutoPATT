@@ -731,10 +731,10 @@ class SpanishSpeaker extends Speaker {
 		def targets = []
 		//Get smallest sonority distance for C+/w,j/ targets and C+/l,r/ targets
 		//separately and add them to targets list.
-		msd = this.getMinSonorityDistance(WJTargetPool)
-		WJTargets = WJTargetPool.findAll{ this.getSonorityDistance(it) == msd }
+		def msd = this.getMinSonorityDistance(WJTargetPool)
+		def WJTargets = WJTargetPool.findAll{ this.getSonorityDistance(it) == msd }
 		msd = this.getMinSonorityDistance(LRTargetPool)
-		LRTargets = LRTargetPool.findAll{ this.getSonorityDistance(it) == msd }
+		def LRTargets = LRTargetPool.findAll{ this.getSonorityDistance(it) == msd }
 		targets = WJTargets + LRTargets
 		
 		return targets
