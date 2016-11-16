@@ -57,8 +57,10 @@ class PhonemicInventory {
 	private Map inventoryMap, meanings
 	private PhoneticInventory phoneticInv
 	private IpaTernaryTree minPairs
+	protected PrintWriter out
 
-	PhonemicInventory(records) {
+	PhonemicInventory(records, out) {
+		this.out = out
 		this.inventoryMap = [:]
 		this.meanings = [:]
 		this.phoneticInv = new PhoneticInventory(records)
@@ -249,7 +251,7 @@ and an interface to output this information. */
 	abstract public void writeCSV(PhoneticInventory phoneticInv)
   	
   	public Speaker(records, out, csv) {
-  		this.phonemicInv = new PhonemicInventory(records)
+  		this.phonemicInv = new PhonemicInventory(records, out)
   		this.phoneticInv = this.phonemicInv.phoneticInv
   		this.clusterInv = new ClusterInventory(records)
   		this.csv = csv
@@ -870,7 +872,10 @@ fileChooser.setDialogTitle("Please specify a CSV file to output data")
 fileChooser.setFileFilter(new FileNameExtensionFilter("CSV file", "csv"))
 userSelection = fileChooser.showSaveDialog()
 if (userSelection == JFileChooser.APPROVE_OPTION){
-	csv = new CSVWriter(new FileWriter(fileChooser.getSelectedFile().getAbsolutePath()))
+	fileName = fileChooser.getSelectedFile().getAbsolutePath()
+	if (!fileName.toLowerCase().endsWith(".csv"))
+		fileName += ".csv"
+	csv = new CSVWriter(new FileWriter(fileName))
 } else {
 	JOptionPane.showMessageDialog(null, "You must choose a valid file to output data",
     "PATT", JOptionPane.WARNING_MESSAGE)
@@ -922,5 +927,5 @@ println "Clusters to monitor: " + speaker.outClusters
 csv.writeNext("Clusters to monitor:")
 csv.writeNext(speaker.outClusters as String[])
 
-println "Please see output in " + fileChooser.getSelectedFile().getAbsolutePath()
+println "Please see output in " + fileName
 csv.close()
