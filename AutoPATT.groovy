@@ -885,7 +885,7 @@ if (userSelection == JFileChooser.APPROVE_OPTION){
 	
 def sessionSelector = new SessionSelector(project)
 def scroller = new JScrollPane(sessionSelector)
-JOptionPane.showMessageDialog(window, scroller)
+JOptionPane.showMessageDialog(window, scroller, "Select Sessions", JOptionPane.INFORMATION_MESSAGE)
 	
 def sessions = sessionSelector.selectedSessions;
 if(sessions.size() == 0) return
