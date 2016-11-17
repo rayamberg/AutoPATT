@@ -405,12 +405,12 @@ class EnglishSpeaker extends Speaker {
 
 	private List PATTStepTwo() {
 		def targetPool = this.modelClusters.findAll{it.length() == 2}
-		this.out.println "PATTStepTwo: targetPool: " + targetPool
+		//this.out.println "PATTStepTwo: targetPool: " + targetPool
 		
 		/* Remove IN clusters */
-		this.out.println "PATTStepTwo: Removing IN clusters..."
+		//this.out.println "PATTStepTwo: Removing IN clusters..."
 		targetPool = targetPool - targetPool.intersect( this.clusters )
-		this.out.println "PATTStepTwo: targetPool: " + targetPool
+		//this.out.println "PATTStepTwo: targetPool: " + targetPool
 		
 		if (!targetPool) return null
 		
@@ -421,12 +421,12 @@ class EnglishSpeaker extends Speaker {
 		a number beyond the max. This is a hack that needs to be fixed */
 		def msd = this.getMinSonorityDistance(clusters)
 		if (msd == null) msd = 10
-		this.out.println "PATTStepTwo: msd: $msd"
+		//this.out.println "PATTStepTwo: msd: $msd"
 		def removables = targetPool.findAll{ this.getSonorityDistance(it) >= msd }
-		this.out.println "PATTStepTwo: removables: $removables"
+		//this.out.println "PATTStepTwo: removables: $removables"
 		targetPool = targetPool - targetPool.intersect( removables )
-		this.out.println "PATTStepTwo: Removed clusters with msd >= $msd"
-		this.out.println "PATTStepTwo: targetPool: " + targetPool
+		//this.out.println "PATTStepTwo: Removed clusters with msd >= $msd"
+		//this.out.println "PATTStepTwo: targetPool: " + targetPool
 		
 		if (!targetPool) return null
 		
@@ -434,10 +434,10 @@ class EnglishSpeaker extends Speaker {
 		   Note: due to changes in sonority, SD=-2 is now SD=-4*/
 		removables = targetPool.findAll{ this.getSonorityDistance(it) == -4 || 
 		["pj", "bj", "fj", "vj", "mj"].contains(it) }
-		this.out.println "PATTStepTwo: removables: $removables"
+		//this.out.println "PATTStepTwo: removables: $removables"
 		targetPool = targetPool - targetPool.intersect( removables )
-		this.out.println "PATTStepTwo: Removed /C/j clusters and SD=-2 clusters"
-		this.out.println "PATTStepTwo: targetPool: " + targetPool
+		//this.out.println "PATTStepTwo: Removed /C/j clusters and SD=-2 clusters"
+		//this.out.println "PATTStepTwo: targetPool: " + targetPool
 		
 		if (!targetPool) return null
 			
@@ -456,8 +456,8 @@ class EnglishSpeaker extends Speaker {
 			this.csv.writeNext("Potential Cluster Targets after Step Two: ")
 			this.csv.writeNext(removables as String[])
 		}
-		this.out.println "PATTStepTwo: Removed sw, sl, sm, sn for now"
-		this.out.println "PATTStepTwo: targetPool: " + targetPool
+		//this.out.println "PATTStepTwo: Removed sw, sl, sm, sn for now"
+		//this.out.println "PATTStepTwo: targetPool: " + targetPool
 		
 		if (!targetPool) return null
 			
@@ -467,8 +467,8 @@ class EnglishSpeaker extends Speaker {
 		msd = this.getMinSonorityDistance(targetPool)
 		removables = targetPool.findAll{ this.getSonorityDistance(it) > msd }
 		targetPool = targetPool - targetPool.intersect( removables )
-		this.out.println "PATTStepTwo: Removed all from target pool >= $msd"
-		this.out.println "PATTStepTwo: targetPool: " + targetPool
+		//this.out.println "PATTStepTwo: Removed all from target pool >= $msd"
+		//this.out.println "PATTStepTwo: targetPool: " + targetPool
 		def targets = []
 		for (cluster in targetPool) {
 			for (phone in cluster)
