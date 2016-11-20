@@ -37,7 +37,7 @@ class PhoneticInventory {
 	
 	List getInventory() {
 	/* Collect all phones that occur more than once */
-		return inventoryMap.findAll{ it.value > 1 }.collect{ it.key }
+		return this.inventoryMap.findAll{ it.value > 1 }.collect{ it.key }
 	}
 	
 	static boolean isConsonant(c) {
@@ -73,9 +73,9 @@ class PhonemicInventory {
 			record.orthography.eachWithIndex { tier, index ->
 				def words = tier.toString().tokenize()
 				/* If there are more orthos than productions...*/
-				if (words.count{it} != record.IPAActual[index].words().count{it})
+				if (words.count{it} != record.IPAActual[index].words().count{it}) {
 					//out.println "Orthography <-> IPA Actual Count Mismatch!"
-				
+				}
 				record.IPAActual[index].words().findAll{it.contains("\\w")}.eachWithIndex { utt, i ->
 					//every word in the word tree gets an empty hash set.
 					this.minPairs.put(utt, new HashSet<IPATranscript>());
@@ -135,16 +135,16 @@ class PhonemicInventory {
 
 	/* Modification of ghedlund's function with my additions noted */
 	IpaTernaryTree buildMinPairs() {
-		def wordKeys = minPairs.keySet()
+		def wordKeys = this.minPairs.keySet()
 		
 		wordKeys.each { key ->
-			def pairs = minPairs.get(key)
+			def pairs = this.minPairs.get(key)
 			
 			wordKeys.each { key2 ->
 				if(key == key2) return
 				if(key.length() != key2.length()) return /* My addition -rsa */
 				/* My addition on line below -rsa */
-				if(meanings[key.toString()] == meanings[key2.toString()]) return 
+				if(this.meanings[key.toString()] == this.meanings[key2.toString()]) return 
 				if(key.getExtension(LevenshteinDistance).distance(key2) == 1) {
 					for (i in 0 .. key.length() - 1) {
 						def p1 = key[i]
@@ -168,7 +168,7 @@ class PhonemicInventory {
 	}
 	
 	List getInventory() {
-		return inventoryMap.findAll{ it.value > 1 }.collect{ it.key }
+		return this.inventoryMap.findAll{ it.value > 1 }.collect{ it.key }
 	}
 }
 
@@ -196,7 +196,7 @@ class ClusterInventory {
 	}
 	
 	List getInventory() {
-		return inventoryMap.findAll{ it.value > 1 }.collect{ it.key }
+		return this.inventoryMap.findAll{ it.value > 1 }.collect{ it.key }
 	}	
 }
 
@@ -395,7 +395,6 @@ class EnglishSpeaker extends Speaker {
 		for (c2 in c2s ) {
 			for (c3 in c3s) {
 				if ( allowedClusters.contains(c2 + c3) ) {
-					this.out.println "Looking at $c2 and $c3"
 					targets.add("s"+c2+c3)
 				}
 			}
