@@ -9,8 +9,7 @@ import javax.swing.filechooser.FileNameExtensionFilter
 import ca.phon.ipa.*;
 import ca.phon.ipa.parser.*;
 import ca.phon.app.session.*;
-import ca.phon.ipa.features.CompoundFeatureComparator;
-import ca.phon.ipa.features.FeatureComparator;
+import ca.phon.ipa.features.IPAElementComparator;
 import ca.phon.ipa.tree.*;
 import ca.phon.phonex.*;
 
@@ -65,8 +64,7 @@ class PhonemicInventory {
 		this.meanings = [:]
 		this.phoneticInv = new PhoneticInventory(records)
 		this.minPairs = new IpaTernaryTree( 
-		  new CompoundFeatureComparator(
-		    FeatureComparator.createPlaceComparator()))
+		  new IPAElementComparator())
 		
 		/* First initialize minPair HashSets and populate meanings Map */
 		records.each { record ->
