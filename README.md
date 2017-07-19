@@ -15,7 +15,7 @@ For the latest script (requires Phon 2.1.8 or above):
 5. AutoPATT should now show up in Phon when you click Plugins->PhonShell scripts
 
 For older versions of Phon:
-1. Please navigate to [Releases][https://github.com/rayamberg/AutoPATT/releases] and download the .ZIP file of AutoPATT that is compatible with your version of Phon. This will be described in the release notes for AutoPATT.
+1. Please navigate to [Releases](https://github.com/rayamberg/AutoPATT/releases) and download the .ZIP file of AutoPATT that is compatible with your version of Phon. This will be described in the release notes for AutoPATT.
 
 2. Extract zip file
 
