@@ -3,6 +3,7 @@ import au.com.bytecode.opencsv.CSVWriter;
 import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 import javax.swing.JComboBox;
+//Do not import java.awt.* as this creates a type exception with List
 import java.awt.Frame;
 import java.awt.FileDialog;
 
