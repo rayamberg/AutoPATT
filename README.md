@@ -3,7 +3,7 @@
 
 INSTALLATION INSTRUCTIONS:
 
-For the latest script (requires Phon 2.1.8 or above):
+For the latest script (requires Phon 2.2 or above):
 1. Click Clone or Download on right side of project toolbar.
 
 2. Click Download .ZIP file
