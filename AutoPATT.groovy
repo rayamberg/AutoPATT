@@ -3,8 +3,8 @@ import au.com.bytecode.opencsv.CSVWriter;
 import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 import javax.swing.JComboBox;
-import javax.swing.JFileChooser;
-import javax.swing.filechooser.FileNameExtensionFilter
+import java.awt.Frame;
+import java.awt.FileDialog;
 
 import ca.phon.ipa.*;
 import ca.phon.ipa.parser.*;
@@ -864,20 +864,19 @@ def project = window.project
 if (project == null) return
 
 /* Prepare CSV file */
-fileChooser = new JFileChooser()
-fileChooser.setDialogTitle("Please specify a CSV file to output data")
-fileChooser.setFileFilter(new FileNameExtensionFilter("CSV file", "csv"))
-userSelection = fileChooser.showSaveDialog()
-if (userSelection == JFileChooser.APPROVE_OPTION){
-	fileName = fileChooser.getSelectedFile().getAbsolutePath()
-	if (!fileName.toLowerCase().endsWith(".csv"))
-		fileName += ".csv"
-	csv = new CSVWriter(new FileWriter(fileName))
-} else {
-	JOptionPane.showMessageDialog(null, "You must choose a valid file to output data",
+fd = new FileDialog(new Frame(), "Please specify a CSV file to output data", FileDialog.SAVE)
+fd.setVisible(true)
+filename = fd.getFile()
+if (filename == null) {
+  JOptionPane.showMessageDialog(null, "You must choose a valid file to output data",
     "PATT", JOptionPane.WARNING_MESSAGE)
-    return
-}
+  return
+} else {
+  if (!filename.toLowerCase().endsWith(".csv"))
+    filename += ".csv"
+  filename = fd.getDirectory() + filename
+  csv = new CSVWriter(new FileWriter(filename))
+} 
 
 	
 def sessionSelector = new SessionSelector(project)
@@ -924,5 +923,5 @@ println "Clusters to monitor: " + speaker.outClusters
 csv.writeNext("Clusters to monitor:")
 csv.writeNext(speaker.outClusters as String[])
 
-println "Please see output in " + fileName
+println "Please see output in " + filename
 csv.close()
