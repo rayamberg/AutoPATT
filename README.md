@@ -1,5 +1,5 @@
 # AutoPATT
-[Phon](http://www.phon.ca) script to automate the [Phonological Assessment and Treatment Target (PATT)] (https://slhs.sdsu.edu/phont/the-patt/) selection process.
+[Phon](http://www.phon.ca) script to automate the [Phonological Assessment and Treatment Target (PATT)](https://slhs.sdsu.edu/phont/the-patt/) selection process.
 
 INSTALLATION INSTRUCTIONS:
 
