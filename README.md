@@ -21,4 +21,4 @@ For older versions of Phon:
 
 3. Move AutoPATT.groovy to your Phon scripts folder. By default this will be in ..\Documents\Phon\PhonShell.
 
-4. AutoPATT should now show up in Phon when you click Plugins->PhonShell scripts
+4. AutoPATT should now appear in Phon when you click Plugins->PhonShell scripts
