@@ -460,7 +460,7 @@ class EnglishSpeaker extends Speaker {
 		if (!targetPool) return null
 			
 		/* Find smallest sonority distance in targetPool. If there is more
-	than one, find those with an OUT phone and return them as a treatment
+	than one, find those with two OUT phones and return them as a treatment
 	target list. */
 		msd = this.getMinSonorityDistance(targetPool)
 		removables = targetPool.findAll{ this.getSonorityDistance(it) > msd }
@@ -468,11 +468,11 @@ class EnglishSpeaker extends Speaker {
 		//this.out.println "PATTStepTwo: Removed all from target pool >= $msd"
 		//this.out.println "PATTStepTwo: targetPool: " + targetPool
 		def targets = []
-		for (cluster in targetPool) {
-			for (phone in cluster)
-			  if (this.outPhones.contains(phone)) {
-				  targets.add(cluster)
-				  break
+		for (cluster in targetPool) {		
+			// Add clusters from pool for which both segments are OUT phones
+			if (this.outPhones.contains(cluster[0]) && this.outPhones.contains(cluster[1])) {
+			    targets.add(cluster)
+			    break
 			  }
 		}
 		return targets
