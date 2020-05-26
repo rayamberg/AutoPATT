@@ -173,8 +173,7 @@ class PhonemicInventory {
 
 class ClusterInventory { 
 	static private PhonexPattern pattern = 
-	/*Phonex pattern for cluster search. Revised to capture tautosyllabic onset clusters in any part of the word*/
-	PhonexPattern.compile("(cluster=(\\c:sctype(\"Onset|LeftAppendix\"))<2,>)")
+	PhonexPattern.compile("^\\s<,1>(cluster=\\c\\c+)")
 	private Map inventoryMap = [:]
 	
 	ClusterInventory(records) {
