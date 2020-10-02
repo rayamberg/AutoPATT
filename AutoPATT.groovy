@@ -416,7 +416,7 @@ class EnglishSpeaker extends Speaker {
 		added to Step One to include in every output */
 		
 		//Examine only 2-element clusters
-//Can be revised to search BASE PHONES
+		//Can be revised to search BASE PHONES
 		def CCInv = this.clusters.findAll{ it.length() == 2 }
 		
 		//Determine if speaker produced adjunct clusters
@@ -447,6 +447,7 @@ class EnglishSpeaker extends Speaker {
 			this.out.println "\tMinimum true CC cluster sonority distance: $msd"
 		}
 		
+		// Get sCC inventory
 		def targets = []
 		def sCCInv = []
 		def sCC = false
@@ -477,7 +478,8 @@ class EnglishSpeaker extends Speaker {
 		
 		/* if "kw", "pr", "tr", "kr", or "pl" can be constructed from phonemes
 		in the phonemic inventory, prepend /s/ to it and return it as a target.
-		QUESTION: count base phones or not? */
+		QUESTION: count base phones or not? 
+		QUESTION: Does this omit any sCC clusters the child produces as potential targets? */
 		def allowedClusters = ["kw", "pɹ", "tɹ", "kɹ", "pl"]
 		def c2s = this.phonemes.findAll{ ["p", "t", "k"].contains(it) }
 		def c3s = this.phonemes.findAll{ ["w", "l", "ɹ"].contains(it) }
