@@ -4,7 +4,7 @@
 INSTALLATION INSTRUCTIONS:
 
 For the latest script (requires Phon 2.2 or above):
-1. Click Code, then select Download Zip on upper-right of project toolbar.
+1. Click Code on upper-right of project toolbar.
 
 2. Click Download .ZIP file
 
