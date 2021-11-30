@@ -801,7 +801,7 @@ class SpanishSpeaker extends Speaker {
 			this.treatmentTargets = methods[pattStep]()
 			if (this.treatmentTargets) {
 				this.out.println("\tTreatment targets found after $pattStep")
-				this.csv.writeNext("TARGET(S) AFTER $pattStep: ")
+				this.csv.writeNext("TARGETS AFTER $pattStep: ")
 				this.csv.writeNext(this.treatmentTargets as String[])	
 				return this.treatmentTargets
 			} else {
